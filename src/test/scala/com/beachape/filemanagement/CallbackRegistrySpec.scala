@@ -28,6 +28,9 @@ with BeforeAndAfter {
 
     val registry = CallbackRegistry(ENTRY_CREATE)
     val tmpDirPath = Paths get System.getProperty("java.io.tmpdir")
+    val callback = {
+      (path: Path) => println(path.toString)
+    }
 
     it("should create a new CallbackRegistry") {
       registry.withPathCallback(tmpDirPath, {
@@ -36,19 +39,29 @@ with BeforeAndAfter {
     }
 
     it("should create a new CallbackRegistry that has the proper callback registered for the given path") {
-      val callback = {
-        (path: Path) => println(path.toString)
-      }
       val newRegistry = registry.withPathCallback(tmpDirPath, callback)
       newRegistry.callbacksForPath(tmpDirPath).map(callbackList => callbackList.contains(callback) should be(true))
     }
 
     it("should not affect the old CallbackRegistry") {
-      val callback = {
-        (path: Path) => println(path.toString)
-      }
       registry.withPathCallback(tmpDirPath, callback)
       registry.callbacksForPath(tmpDirPath).map(callbackList => callbackList.contains(callback) should be(false))
+    }
+
+    it("should be chainable and allow different callbacks to be registered for the same path ") {
+      val callback1 = { (path: Path) =>
+          val test = 1 + 1
+      }
+      val callback2 = { (path: Path) =>
+          val test = 1 + 2
+      }
+      val callback3 = { (path: Path) =>
+          val test = 1 + 3
+      }
+      val newRegistry = registry.withPathCallback(tmpDirPath, callback1).
+        withPathCallback(tmpDirPath, callback2).
+        withPathCallback(tmpDirPath, callback3)
+      newRegistry.callbacksForPath(tmpDirPath).map(callbacks => callbacks.length should be(3))
     }
 
   }
@@ -76,6 +89,29 @@ with BeforeAndAfter {
       }
       val newRegistry = registry.withPathCallback(tmpDirPath, callback)
       newRegistry.callbacksForPath(tmpDirPath).map(callbackList => callbackList.contains(callback) should be(true))
+    }
+
+    it("should return Some[List[Callback]] that are individually #apply able") {
+      var sum = 0
+      val callback1 = { (path: Path) =>
+        sum += 1
+      }
+      val callback2 = { (path: Path) =>
+        sum += 2
+      }
+      val callback3 = { (path: Path) =>
+        sum += 3
+      }
+      val newRegistry = registry.withPathCallback(tmpDirPath, callback1).
+        withPathCallback(tmpDirPath, callback2).
+        withPathCallback(tmpDirPath, callback3)
+      for {
+        callbacks <- newRegistry.callbacksForPath(tmpDirPath)
+        callback <- callbacks
+      } {
+        callback(tmpDirPath)
+      }
+      sum should be (6)
     }
   }
 }
