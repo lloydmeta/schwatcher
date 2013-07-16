@@ -50,6 +50,9 @@ class MonitorActor(concerrency: Int = 5) extends Actor with Logging {
   /**
    * Registers a callback for a path for an Event type
    *
+   * If the path does not exist at the time of adding, a log message is created and the
+   * path is ignored
+   *
    * @param eventType WatchEvent.Kind[Path] Java7 Event type
    * @param path Path (Java type) to be registered
    * @param callback Callback function, Path => Init
@@ -63,14 +66,29 @@ class MonitorActor(concerrency: Int = 5) extends Actor with Logging {
     path
   }
 
+  /**
+   * Recursively registers a callback for a path for an Event type
+   *
+   * If the path is not that of a directory, register the callback only for the path itself
+   * then move on
+   *
+   * @param eventType WatchEvent.Kind[Path] Java7 Event type
+   * @param path Path (Java type) to be registered
+   * @param callback Callback function, Path => Init
+   * @return Path used for registration
+   */
   def recursivelyAddPathCallback(eventType: WatchEvent.Kind[Path], path: Path, callback: Callback): Path = {
     addPathCallback(eventType, path, callback)
-    Files.walkFileTree(path, new SimpleFileVisitor[Path] {
-      override def preVisitDirectory(dir: Path, attributes: BasicFileAttributes) = {
-        addPathCallback(eventType, dir, callback)
-        FileVisitResult.CONTINUE
-      }
-    })
+    if (File(path.toString).isDirectory)
+      Files.walkFileTree(path, new SimpleFileVisitor[Path] {
+        override def preVisitDirectory(dir: Path, attributes: BasicFileAttributes) = {
+          addPathCallback(eventType, dir, callback)
+          FileVisitResult.CONTINUE
+        }
+      })
+    else
+      logger.info(s"Path '$path' is not a directory, skipping recursive callback registration")
+    path
   }
 
   /**
