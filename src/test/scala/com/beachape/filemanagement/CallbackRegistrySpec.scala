@@ -7,9 +7,9 @@ import java.nio.file.StandardWatchEventKinds._
 import java.nio.file.{Path, Paths}
 
 class CallbackRegistrySpec extends FunSpec
-with PrivateMethodTester
-with ShouldMatchers
-with BeforeAndAfter {
+  with PrivateMethodTester
+  with ShouldMatchers
+  with BeforeAndAfter {
 
   describe("companion factory object") {
 
