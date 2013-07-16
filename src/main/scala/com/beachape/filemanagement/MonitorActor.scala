@@ -5,10 +5,12 @@ import akka.agent.Agent
 import akka.actor.Props
 import scala.concurrent.duration._
 import akka.util.Timeout
-import java.nio.file.{WatchEvent, Path}
+import java.nio.file._
 import java.nio.file.StandardWatchEventKinds._
 import com.beachape.filemanagement.RegistryTypes._
-import com.beachape.filemanagement.MainActorSystem._
+import java.nio.file.attribute.BasicFileAttributes
+import com.typesafe.scalalogging.slf4j.Logging
+import scala.reflect.io.File
 
 /**
  * Companion object for creating Monitor actor instances
@@ -30,9 +32,10 @@ object MonitorActor {
  * Should be instantiated with Props provided via companion object factory
  * method
  */
-class MonitorActor(concerrency: Int = 5) extends Actor {
+class MonitorActor(concerrency: Int = 5) extends Actor with Logging {
 
   implicit val timeout = Timeout(10 seconds)
+  implicit val system = context.system
 
   private val eventTypeCallbackRegistryMap = Map(
     ENTRY_CREATE -> Agent(CallbackRegistry(ENTRY_CREATE)),
@@ -53,8 +56,21 @@ class MonitorActor(concerrency: Int = 5) extends Actor {
    * @return Path used for registration
    */
   def addPathCallback(eventType: WatchEvent.Kind[Path], path: Path, callback: Callback): Path = {
-    eventTypeCallbackRegistryMap.get(eventType).map(_ send (_ withPathCallback(path, callback)))
+    if (File(path.toString).exists)
+      eventTypeCallbackRegistryMap.get(eventType).map(_ send (_ withPathCallback(path, callback)))
+    else
+      logger.info(s"Path '$path' does not exist, ignoring.")
     path
+  }
+
+  def recursivelyAddPathCallback(eventType: WatchEvent.Kind[Path], path: Path, callback: Callback): Path = {
+    addPathCallback(eventType, path, callback)
+    Files.walkFileTree(path, new SimpleFileVisitor[Path] {
+      override def preVisitDirectory(dir: Path, attributes: BasicFileAttributes) = {
+        addPathCallback(eventType, dir, callback)
+        FileVisitResult.CONTINUE
+      }
+    })
   }
 
   /**
@@ -69,4 +85,5 @@ class MonitorActor(concerrency: Int = 5) extends Actor {
       get(eventType).
       flatMap(registryAgent => registryAgent.await.callbacksForPath(path))
   }
+
 }

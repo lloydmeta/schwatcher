@@ -8,16 +8,15 @@ import akka.testkit.{TestActorRef, TestKit}
 import java.nio.file.{WatchEvent, Path}
 import java.nio.file.StandardWatchEventKinds._
 
-
 class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
-with FunSpec
-with ShouldMatchers
-with BeforeAndAfter {
+  with FunSpec
+  with ShouldMatchers
+  with BeforeAndAfter {
 
   val tempFile = java.io.File.createTempFile("fakeFile", ".log")
   val monitorActorRef = TestActorRef(new MonitorActor)
   val monitorActor = monitorActorRef.underlyingActor
-  val dummyFunction: Path => Unit = { (path: Path) =>  }
+  val dummyFunction: Path => Unit = { (path: Path) =>  val bleh = "lala"}
 
   describe("methods testing") {
 
