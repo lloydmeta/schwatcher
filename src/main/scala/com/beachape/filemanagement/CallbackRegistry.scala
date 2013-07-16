@@ -8,17 +8,25 @@ import com.beachape.filemanagement.RegistryTypes._
  * based on a passed in FileEvent
  */
 object CallbackRegistry {
+  /**
+   * Factory method that returns a CallbackRegistry
+   *
+   * @param eventType WatchEvent.Kind[Path] Java7 Event type
+   * @param pathToCallbacksMap Optional Map[Path,List[Callbacks]] for dereferencing Paths and callback
+   * @return
+   */
   def apply(eventType: WatchEvent.Kind[Path], pathToCallbacksMap: PathToCallbacks = Map()) =
     new CallbackRegistry(eventType, pathToCallbacksMap)
 }
 
 /**
- * Immutable class
- * @param eventType
- * @param pathToCallbacksMap
+ * Immutable class for holding the callbacks for a given path
+ *
+ * Should be instantiated via companion object above
+ * @param eventType WatchEvent.Kind[Path] Java7 Event type
+ * @param pathToCallbacksMap Map[Path,List[Callbacks]] for dereferencing Paths and callback
  */
 class CallbackRegistry(val eventType: WatchEvent.Kind[Path], pathToCallbacksMap: PathToCallbacks) {
-
   /**
    * Returns a new instance of CallbackRegistry with the callback registered for the
    * given path
