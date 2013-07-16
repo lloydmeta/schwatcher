@@ -31,6 +31,8 @@ class CallbackRegistry(val eventType: WatchEvent.Kind[Path], pathToCallbacksMap:
    * Returns a new instance of CallbackRegistry with the callback registered for the
    * given path
    *
+   * Some call this a monadic method
+   *
    * @param path Path (Java type) to be registered
    * @param callback Callback function that takes a Path as a parameter and has Unit return type
    * @return a new CallbackRegistry
@@ -42,6 +44,8 @@ class CallbackRegistry(val eventType: WatchEvent.Kind[Path], pathToCallbacksMap:
 
   /**
    * Returns a new instance of CallbackRegistry without callbacks for the specified path
+   *
+   * Some call this a monadic method
    *
    * @param path Path (Java type) to be registered
    * @return a new CallbackRegistry
