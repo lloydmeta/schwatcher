@@ -12,6 +12,11 @@ object CallbackRegistry {
     new CallbackRegistry(eventType, pathToCallbacksMap)
 }
 
+/**
+ * Immutable class
+ * @param eventType
+ * @param pathToCallbacksMap
+ */
 class CallbackRegistry(val eventType: WatchEvent.Kind[Path], pathToCallbacksMap: PathToCallbacks) {
 
   /**
@@ -26,6 +31,8 @@ class CallbackRegistry(val eventType: WatchEvent.Kind[Path], pathToCallbacksMap:
     val totalCallbacksForPath = callback :: pathToCallbacksMap.getOrElse(path, Nil)
     CallbackRegistry(eventType, pathToCallbacksMap ++ Map(path -> totalCallbacksForPath))
   }
+
+  def withoutCallbacksForPath(path: Path) = CallbackRegistry(eventType, pathToCallbacksMap - path)
 
   /**
    * Returns Some[List[Callback]] registered for the path passed in

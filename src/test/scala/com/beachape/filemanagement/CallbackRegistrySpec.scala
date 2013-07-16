@@ -4,7 +4,7 @@ import org.scalatest.{PrivateMethodTester, BeforeAndAfter, FunSpec}
 import org.scalatest.matchers.ShouldMatchers
 
 import java.nio.file.StandardWatchEventKinds._
-import java.nio.file.{Path, Paths}
+import java.nio.file.{Path, Paths, Files}
 
 class CallbackRegistrySpec extends FunSpec
   with PrivateMethodTester
@@ -64,6 +64,27 @@ class CallbackRegistrySpec extends FunSpec
       newRegistry.callbacksForPath(tmpDirPath).map(callbacks => callbacks.length should be(3))
     }
 
+  }
+
+  describe("#withoutCallbacksForPath") {
+
+    val tmpDirPath = Paths get System.getProperty("java.io.tmpdir")
+    val newTmpDir = Files.createTempDirectory(tmpDirPath, "test")
+    val callback = {
+      (path: Path) => println(path.toString)
+    }
+    val registry = CallbackRegistry(ENTRY_CREATE).withPathCallback(tmpDirPath, callback)
+
+    it("should return a CallbackRegistry that does not callbacks for the path passed in") {
+      val newRegistry = registry.withoutCallbacksForPath(tmpDirPath)
+      newRegistry.callbacksForPath(tmpDirPath).isEmpty should be (true)
+    }
+
+    it("should return a CallbackRegistry without raising an exception even if the path was never registered in the first place") {
+      val bareRegistry = CallbackRegistry(ENTRY_CREATE).withPathCallback(newTmpDir, callback)
+      bareRegistry.withoutCallbacksForPath(tmpDirPath).callbacksForPath(tmpDirPath).isEmpty should be(true)
+      bareRegistry.withoutCallbacksForPath(tmpDirPath).callbacksForPath(newTmpDir).isEmpty should be(false)
+    }
   }
 
   describe("#callbacksForPath") {
