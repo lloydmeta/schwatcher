@@ -32,6 +32,12 @@ class CallbackRegistry(val eventType: WatchEvent.Kind[Path], pathToCallbacksMap:
     CallbackRegistry(eventType, pathToCallbacksMap ++ Map(path -> totalCallbacksForPath))
   }
 
+  /**
+   * Returns a new instance of CallbackRegistry without callbacks for the specified path
+   *
+   * @param path Path (Java type) to be registered
+   * @return a new CallbackRegistry
+   */
   def withoutCallbacksForPath(path: Path) = CallbackRegistry(eventType, pathToCallbacksMap - path)
 
   /**
