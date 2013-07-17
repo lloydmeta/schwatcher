@@ -28,9 +28,7 @@ class CallbackRegistrySpec extends FunSpec
 
     val registry = CallbackRegistry(ENTRY_CREATE)
     val tmpDirPath = Paths get System.getProperty("java.io.tmpdir")
-    val callback = {
-      (path: Path) => println(path.toString)
-    }
+    val callback = { (path: Path) => println(path.toString) }
 
     it("should create a new CallbackRegistry") {
       registry.withPathCallback(tmpDirPath, {
