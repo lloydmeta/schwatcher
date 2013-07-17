@@ -40,8 +40,41 @@ class MonitorActor(concerrency: Int = 5) extends Actor with Logging with Recursi
     ENTRY_DELETE -> Agent(CallbackRegistry(ENTRY_DELETE))
   )
 
+  val watchServiceTask = new WatchServiceTask(self)
+  val watchThread = new Thread(watchServiceTask, "WatchService")
+
+  override def preStart() {
+    watchThread.setDaemon(true)
+    watchThread.start()
+  }
+
+  override def postStop() {
+    watchThread.interrupt()
+  }
+
   def receive = {
-    case _ => throw new IllegalArgumentException
+    case message: EventAtPath => {
+      val event, path = (message.event, message.path)
+      logger.info(s"Event $event at path: $path")
+    }
+    case message: RegisterCallback => {
+      if (message.recursive) {
+        recursivelyAddPathCallback(message.event, message.path, message.callback)
+        recursivelyAddPathToWatchServiceTask(message.event, message.path)
+      }
+      else {
+        addPathCallback(message.event, message.path, message.callback)
+        addPathToWatchServiceTask(message.event, message.path)
+      }
+
+    }
+    case message: UnRegisterCallback => {
+      if (message.recursive)
+        recursivelyRemoveCallbacksForPath(message.event, message.path)
+      else
+        removeCallbacksForPath(message.event, message.path)
+    }
+    case _ => logger.error("Monitor Actor received an unexpected message :( !")
   }
 
   /**
@@ -116,6 +149,9 @@ class MonitorActor(concerrency: Int = 5) extends Actor with Logging with Recursi
   /**
    * Retrieves the callbacks registered for a path for an Event type
    *
+   * Note that #await is called on the agent so that the thread blocks until all changes
+   * have been made on the agent.
+   *
    * @param eventType WatchEvent.Kind[Path] Java7 Event type
    * @param path Path (Java type) to be registered
    * @return Option[Callbacks] for the path at the event type (Option[List[Path => Unit]])
@@ -124,6 +160,18 @@ class MonitorActor(concerrency: Int = 5) extends Actor with Logging with Recursi
     eventTypeCallbackRegistryMap.
       get(eventType).
       flatMap(registryAgent => registryAgent.await.callbacksForPath(path))
+  }
+
+  private def addPathToWatchServiceTask(eventType: WatchEvent.Kind[Path], path: Path) {
+    watchServiceTask.watch(path, eventType)
+  }
+
+  private def recursivelyAddPathToWatchServiceTask(eventType: WatchEvent.Kind[Path], path: Path) {
+    addPathToWatchServiceTask(eventType, path)
+    forEachDir(path) {
+      (directory, attributes) =>
+        addPathToWatchServiceTask(eventType, directory)
+    }
   }
 
 }
