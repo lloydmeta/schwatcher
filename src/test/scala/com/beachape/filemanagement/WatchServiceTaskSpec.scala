@@ -29,7 +29,7 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
   val tempDirPath = Files.createTempDirectory("root")
   val tempFileInTempDir = Files.createTempFile(tempDirPath, "hello", ".there")
 
-  before{
+  before {
     watchServiceTask = WatchServiceTask(dummyActor)
   }
 
