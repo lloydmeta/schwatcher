@@ -26,7 +26,8 @@ object CallbackRegistry {
  * @param eventType WatchEvent.Kind[Path] Java7 Event type
  * @param pathToCallbacksMap Map[Path,List[Callbacks]] for dereferencing Paths and callback
  */
-class CallbackRegistry(val eventType: WatchEvent.Kind[Path], pathToCallbacksMap: PathToCallbacks) {
+class CallbackRegistry(val eventType: WatchEvent.Kind[Path], pathToCallbacksMap: PathToCallbacks)
+  extends RecursiveFileActions {
   /**
    * Returns a new instance of CallbackRegistry with the callback registered for the
    * given path
@@ -43,14 +44,49 @@ class CallbackRegistry(val eventType: WatchEvent.Kind[Path], pathToCallbacksMap:
   }
 
   /**
+   * Returns a new instance of CallbackRegistry with the callback registered for the
+   * given path, but does it recursively
+   *
+   * Some call this a monadic method
+   *
+   * @param path Path (Java type) to be registered for callbacks recursively
+   * @param callback Callback function that takes a Path as a parameter and has Unit return type
+   * @return a new CallbackRegistry
+   */
+  def withPathCallbackRecursive(path: Path, callback: Callback): CallbackRegistry = {
+    var callbackRegistry = withPathCallback(path, callback)
+    forEachDir(path) { (containedDirPath, _) =>
+      callbackRegistry = callbackRegistry.withPathCallback(containedDirPath, callback)
+    }
+    callbackRegistry
+  }
+
+  /**
    * Returns a new instance of CallbackRegistry without callbacks for the specified path
    *
    * Some call this a monadic method
    *
-   * @param path Path (Java type) to be registered
+   * @param path Path (Java type) to be unregistered
    * @return a new CallbackRegistry
    */
   def withoutCallbacksForPath(path: Path) = CallbackRegistry(eventType, pathToCallbacksMap - path)
+
+  /**
+   * Returns a new instance of CallbackRegistry without callbacks for the specified path, but
+   * recursively so that all folders under this folder are also unregistered for callbacks
+   *
+   * Some call this a monadic method
+   *
+   * @param path Path (Java type) to be unregistered recursively
+   * @return a new CallbackRegistry
+   */
+  def withoutCallbacksForPathRecursive(path: Path): CallbackRegistry = {
+    var callbackRegistry = withoutCallbacksForPath(path)
+    forEachDir(path) { (containedDirPath, _) =>
+      callbackRegistry = withoutCallbacksForPath(containedDirPath)
+    }
+    callbackRegistry
+  }
 
   /**
    * Returns Some[List[Callback]] registered for the path passed in

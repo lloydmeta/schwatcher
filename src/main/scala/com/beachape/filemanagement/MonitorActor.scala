@@ -58,10 +58,7 @@ class MonitorActor(concerrency: Int = 5) extends Actor with Logging with Recursi
    * @return Path used for registration
    */
   def addPathCallback(eventType: WatchEvent.Kind[Path], path: Path, callback: Callback): Path = {
-    if (File(path.toString).exists)
-      eventTypeCallbackRegistryMap.get(eventType).map(_ send (_ withPathCallback(path, callback)))
-    else
-      logger.info(s"Path '$path' does not exist, ignoring.")
+    eventTypeCallbackRegistryMap.get(eventType).map(_ send (_ withPathCallback(path, callback)))
     path
   }
 
@@ -78,10 +75,7 @@ class MonitorActor(concerrency: Int = 5) extends Actor with Logging with Recursi
    * @return Path used for registration
    */
   def recursivelyAddPathCallback(eventType: WatchEvent.Kind[Path], path: Path, callback: Callback): Path = {
-    addPathCallback(eventType, path, callback)
-    forEachDir(path) { (containedDirPath, attributes) =>
-      addPathCallback(eventType, containedDirPath, callback)
-    }
+    eventTypeCallbackRegistryMap.get(eventType).map(_ send (_ withPathCallbackRecursive (path, callback)))
     path
   }
 
@@ -117,10 +111,7 @@ class MonitorActor(concerrency: Int = 5) extends Actor with Logging with Recursi
    * @return Path used for un-registering callbacks
    */
   def recursivelyRemoveCallbacksForPath(eventType: WatchEvent.Kind[Path], path: Path): Path = {
-    removeCallbacksForPath(eventType, path)
-    forEachDir(path) { (containedDirPath, attributes) =>
-        removeCallbacksForPath(eventType, containedDirPath)
-    }
+    eventTypeCallbackRegistryMap.get(eventType).map(_ send (_ withoutCallbacksForPathRecursive (path)))
     path
   }
 

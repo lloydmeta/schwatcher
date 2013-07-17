@@ -11,6 +11,8 @@ class CallbackRegistrySpec extends FunSpec
   with ShouldMatchers
   with BeforeAndAfter {
 
+  val dummyFunction: Path => Unit = { (path: Path) =>  val bleh = "lala"}
+
   describe("companion factory object") {
 
     it("should create an instance of CallbackRegistry") {
@@ -82,6 +84,59 @@ class CallbackRegistrySpec extends FunSpec
       val bareRegistry = CallbackRegistry(ENTRY_CREATE).withPathCallback(newTmpDir, callback)
       bareRegistry.withoutCallbacksForPath(tmpDirPath).callbacksForPath(tmpDirPath).isEmpty should be(true)
       bareRegistry.withoutCallbacksForPath(tmpDirPath).callbacksForPath(newTmpDir).isEmpty should be(false)
+    }
+  }
+
+  describe("recursive methods") {
+
+    val tempDirPath = Files.createTempDirectory("root")
+    val tempDirLevel1Path = Files.createTempDirectory(tempDirPath, "level1")
+    val tempDirLevel2Path = Files.createTempDirectory(tempDirLevel1Path, "level2")
+    val tempFileInTempDir = Files.createTempFile(tempDirPath, "hello", ".there")
+
+    describe("#withPathCallbackRecursive") {
+
+      val registryWithRecursive = CallbackRegistry(ENTRY_CREATE).withPathCallbackRecursive(tempDirPath, dummyFunction)
+
+      it("should add callbacks for all folders that exist under the path given") {
+        registryWithRecursive.callbacksForPath(tempDirLevel1Path).map(callbacks =>
+          callbacks should contain (dummyFunction))
+        registryWithRecursive.callbacksForPath(tempDirLevel2Path).map(callbacks =>
+          callbacks should contain (dummyFunction))
+      }
+
+      it("should add callbacks for a file path") {
+        val registry = CallbackRegistry(ENTRY_CREATE).withPathCallbackRecursive(tempFileInTempDir, dummyFunction)
+        registry.callbacksForPath(tempFileInTempDir).map(callbacks =>
+          callbacks should contain (dummyFunction))
+      }
+
+      it("should not add callbacks recursively if given a file path") {
+        val registry = CallbackRegistry(ENTRY_CREATE).withPathCallbackRecursive(tempFileInTempDir, dummyFunction)
+        registry.callbacksForPath(tempFileInTempDir).map(callbacks =>
+          callbacks should contain (dummyFunction))
+        registry.callbacksForPath(tempDirLevel1Path).map(callbacks =>
+          callbacks should not contain (dummyFunction))
+        registry.callbacksForPath(tempDirLevel2Path).map(callbacks =>
+          callbacks should not contain (dummyFunction))
+      }
+
+    }
+
+    describe("#withoutCallbacksForPathRecursive") {
+
+      it("should cause the callback retrieved for the path via callbacksForPath to be empty") {
+        val registry = CallbackRegistry(ENTRY_CREATE).withPathCallbackRecursive(tempDirPath, dummyFunction)
+        val registryWithoutCallbacks = registry.withoutCallbacksForPathRecursive(tempDirPath)
+        registryWithoutCallbacks.callbacksForPath(tempDirLevel2Path).isEmpty should be(true)
+      }
+
+      it("should remove callbacks when given a path to a file") {
+        val registry = CallbackRegistry(ENTRY_CREATE).withPathCallbackRecursive(tempFileInTempDir, dummyFunction)
+        val registryWithoutCallbacks = registry.withoutCallbacksForPathRecursive(tempFileInTempDir)
+        registryWithoutCallbacks.callbacksForPath(tempFileInTempDir).isEmpty should be(true)
+      }
+
     }
   }
 
