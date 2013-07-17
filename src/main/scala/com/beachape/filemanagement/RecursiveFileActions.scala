@@ -20,7 +20,7 @@ trait RecursiveFileActions extends Logging {
    * @param doBlock a function that takes Path and BasicFileAttributes as parameters and returns Unit
    * @return Unit
    */
-  def recursiveActionForPath(path: Path)(doBlock: (Path, BasicFileAttributes) => Unit) {
+  def forEachDir(path: Path)(doBlock: (Path, BasicFileAttributes) => Unit) {
     if (File(path.toString).isDirectory)
       Files.walkFileTree(path, new SimpleFileVisitor[Path] {
         override def preVisitDirectory(dir: Path, attributes: BasicFileAttributes) = {

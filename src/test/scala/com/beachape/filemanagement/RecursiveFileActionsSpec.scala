@@ -17,11 +17,11 @@ class RecursiveFileActionsSpec extends FunSpec
   val tempDirLevel2Path = Files.createTempDirectory(tempDirLevel1Path, "level2")
   val tempFileInTempDir = Files.createTempFile(tempDirPath, "hello", ".there")
 
-  describe("#recursiveActionForPath") {
+  describe("#forEachDir") {
 
     it("should ignore paths for files") {
       var called = false
-      dummy.recursiveActionForPath(tempFileInTempDir){(path, attr) =>
+      dummy.forEachDir(tempFileInTempDir){(path, attr) =>
         called = true
       }
       called should be(false)
@@ -29,7 +29,7 @@ class RecursiveFileActionsSpec extends FunSpec
 
     it("should call the block once for every existing directory inside a directory path") {
       var counter = 0
-      dummy.recursiveActionForPath(tempDirPath){(path, attr) =>
+      dummy.forEachDir(tempDirPath){(path, attr) =>
         counter += 1
       }
       counter should be(3)

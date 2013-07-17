@@ -79,7 +79,7 @@ class MonitorActor(concerrency: Int = 5) extends Actor with Logging with Recursi
    */
   def recursivelyAddPathCallback(eventType: WatchEvent.Kind[Path], path: Path, callback: Callback): Path = {
     addPathCallback(eventType, path, callback)
-    recursiveActionForPath(path) { (containedDirPath, attributes) =>
+    forEachDir(path) { (containedDirPath, attributes) =>
       addPathCallback(eventType, containedDirPath, callback)
     }
     path
@@ -118,7 +118,7 @@ class MonitorActor(concerrency: Int = 5) extends Actor with Logging with Recursi
    */
   def recursivelyRemoveCallbacksForPath(eventType: WatchEvent.Kind[Path], path: Path): Path = {
     removeCallbacksForPath(eventType, path)
-    recursiveActionForPath(path) { (containedDirPath, attributes) =>
+    forEachDir(path) { (containedDirPath, attributes) =>
         removeCallbacksForPath(eventType, containedDirPath)
     }
     path
