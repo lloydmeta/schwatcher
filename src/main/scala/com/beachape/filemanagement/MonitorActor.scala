@@ -103,6 +103,19 @@ class MonitorActor(concerrency: Int = 5) extends Actor with Logging with Recursi
     path
   }
 
+  /**
+   * Recursively removes the callbacks for a specific path, does not care if Path had no callbacks in the
+   * first place. Only recursively un-registers callbacks for paths that are directories under the current path.
+   *
+   * Note that this does not remove the event listeners from the Java API,
+   * because such functionality does not exist. All this does is make sure that the callbacks
+   * registered to a specific path do not get fired. Depending on your use case,
+   * it may make more sense to just kill the monitor actor to start fresh.
+   *
+   * @param eventType WatchEvent.Kind[Path] Java7 Event type
+   * @param path Path (Java type) to be registered
+   * @return Path used for un-registering callbacks
+   */
   def recursivelyRemoveCallbacksForPath(eventType: WatchEvent.Kind[Path], path: Path): Path = {
     removeCallbacksForPath(eventType, path)
     recursiveActionForPath(path) { (containedDirPath, attributes) =>
