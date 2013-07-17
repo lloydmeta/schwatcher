@@ -28,6 +28,11 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
 
   describe("methods testing") {
 
+    val tempDirPath = Files.createTempDirectory("root")
+    val tempDirLevel1Path = Files.createTempDirectory(tempDirPath, "level1")
+    val tempDirLevel2Path = Files.createTempDirectory(tempDirLevel1Path, "level2")
+    val tempFileInTempDir = Files.createTempFile(tempDirPath, "hello", ".there")
+
     describe("#addPathCallback") {
 
       it("should return the path used for registration") {
@@ -43,11 +48,6 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
     }
 
     describe("#recursivelyAddPathCallback") {
-
-      val tempDirPath = Files.createTempDirectory("root")
-      val tempDirLevel1Path = Files.createTempDirectory(tempDirPath, "level1")
-      val tempDirLevel2Path = Files.createTempDirectory(tempDirLevel1Path, "level2")
-      val tempFileInTempDir = Files.createTempFile(tempDirPath, "hello", ".there")
 
       it("should return the path used for registration") {
         monitorActor.recursivelyAddPathCallback(ENTRY_CREATE, tempDirPath, dummyFunction) should be(tempDirPath)
@@ -93,11 +93,6 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
     }
 
     describe("#recursivelyRemoveCallbacksForPath") {
-
-      val tempDirPath = Files.createTempDirectory("root")
-      val tempDirLevel1Path = Files.createTempDirectory(tempDirPath, "level1")
-      val tempDirLevel2Path = Files.createTempDirectory(tempDirLevel1Path, "level2")
-      val tempFileInTempDir = Files.createTempFile(tempDirPath, "hello", ".there")
 
       monitorActor.recursivelyAddPathCallback(ENTRY_CREATE, tempDirPath, dummyFunction)
 
