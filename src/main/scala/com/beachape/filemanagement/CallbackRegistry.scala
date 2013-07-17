@@ -56,7 +56,7 @@ class CallbackRegistry(val eventType: WatchEvent.Kind[Path], pathToCallbacksMap:
    * Returns Some[List[Callback]] registered for the path passed in
    *
    * @param path Path (Java type) to use for checking for callbacks
-   * @return Callbacks, which is essentially List[Callback]
+   * @return Some[Callbacks], which is essentially List[Callback]
    */
   def callbacksForPath(path: Path): Option[Callbacks] = pathToCallbacksMap.get(path)
 }
