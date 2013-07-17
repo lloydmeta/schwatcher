@@ -8,7 +8,6 @@ import akka.util.Timeout
 import java.nio.file._
 import java.nio.file.StandardWatchEventKinds._
 import com.beachape.filemanagement.RegistryTypes._
-import java.nio.file.attribute.BasicFileAttributes
 import com.typesafe.scalalogging.slf4j.Logging
 import scala.reflect.io.File
 
@@ -32,7 +31,7 @@ object MonitorActor {
  * Should be instantiated with Props provided via companion object factory
  * method
  */
-class MonitorActor(concerrency: Int = 5) extends Actor with Logging {
+class MonitorActor(concerrency: Int = 5) extends Actor with Logging with RecursiveFileActions {
 
   implicit val timeout = Timeout(10 seconds)
   implicit val system = context.system
@@ -67,10 +66,11 @@ class MonitorActor(concerrency: Int = 5) extends Actor with Logging {
   }
 
   /**
-   * Recursively registers a callback for a path for an Event type
+   * Recursively registers a callback for a path for an Event type.
+   * Only recursively registers callbacks for paths that are directories including the current path.
    *
    * If the path is not that of a directory, register the callback only for the path itself
-   * then move on
+   * then move on. Only recursively registers callbacks for paths that are directories including the current path.
    *
    * @param eventType WatchEvent.Kind[Path] Java7 Event type
    * @param path Path (Java type) to be registered
@@ -79,15 +79,35 @@ class MonitorActor(concerrency: Int = 5) extends Actor with Logging {
    */
   def recursivelyAddPathCallback(eventType: WatchEvent.Kind[Path], path: Path, callback: Callback): Path = {
     addPathCallback(eventType, path, callback)
-    if (File(path.toString).isDirectory)
-      Files.walkFileTree(path, new SimpleFileVisitor[Path] {
-        override def preVisitDirectory(dir: Path, attributes: BasicFileAttributes) = {
-          addPathCallback(eventType, dir, callback)
-          FileVisitResult.CONTINUE
-        }
-      })
-    else
-      logger.info(s"Path '$path' is not a directory, skipping recursive callback registration")
+    recursiveActionForPath(path) { (containedDirPath, attributes) =>
+      addPathCallback(eventType, containedDirPath, callback)
+    }
+    path
+  }
+
+  /**
+   * Removes the callbacks for a specific path, does not care if Path had no callbacks in the
+   * first place. Only recursively un-registers callbacks for paths that are directories under the current path.
+   *
+   * Note that this does not remove the event listeners from the Java API,
+   * because such functionality does not exist. All this does is make sure that the callbacks
+   * registered to a specific path do not get fired. Depending on your use case,
+   * it may make more sense to just kill the monitor actor to start fresh.
+   *
+   * @param eventType WatchEvent.Kind[Path] Java7 Event type
+   * @param path Path (Java type) to be registered
+   * @return Path used for un-registering callbacks
+   */
+  def removeCallbacksForPath(eventType: WatchEvent.Kind[Path], path: Path): Path = {
+    eventTypeCallbackRegistryMap.get(eventType).map(_ send (_ withoutCallbacksForPath (path)))
+    path
+  }
+
+  def recursivelyRemoveCallbacksForPath(eventType: WatchEvent.Kind[Path], path: Path): Path = {
+    removeCallbacksForPath(eventType, path)
+    recursiveActionForPath(path) { (containedDirPath, attributes) =>
+        removeCallbacksForPath(eventType, containedDirPath)
+    }
     path
   }
 
