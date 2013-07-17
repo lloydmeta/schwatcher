@@ -1,10 +1,10 @@
 package com.beachape.filemanagement
 
-import org.scalatest.{PrivateMethodTester, BeforeAndAfter, FunSpec}
-import org.scalatest.matchers.ShouldMatchers
-
 import java.nio.file.StandardWatchEventKinds._
 import java.nio.file.{Path, Paths, Files}
+import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.{PrivateMethodTester, BeforeAndAfter, FunSpec}
+
 
 class CallbackRegistrySpec extends FunSpec
   with PrivateMethodTester

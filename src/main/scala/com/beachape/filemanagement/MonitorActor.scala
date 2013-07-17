@@ -1,15 +1,13 @@
 package com.beachape.filemanagement
 
-import akka.actor.Actor
+import akka.actor.{Actor, Props}
 import akka.agent.Agent
-import akka.actor.Props
-import scala.concurrent.duration._
 import akka.util.Timeout
-import java.nio.file._
-import java.nio.file.StandardWatchEventKinds._
 import com.beachape.filemanagement.RegistryTypes._
 import com.typesafe.scalalogging.slf4j.Logging
-import scala.reflect.io.File
+import java.nio.file.StandardWatchEventKinds._
+import java.nio.file._
+import scala.concurrent.duration._
 
 /**
  * Companion object for creating Monitor actor instances
@@ -75,7 +73,7 @@ class MonitorActor(concerrency: Int = 5) extends Actor with Logging with Recursi
    * @return Path used for registration
    */
   def recursivelyAddPathCallback(eventType: WatchEvent.Kind[Path], path: Path, callback: Callback): Path = {
-    eventTypeCallbackRegistryMap.get(eventType).map(_ send (_ withPathCallbackRecursive (path, callback)))
+    eventTypeCallbackRegistryMap.get(eventType).map(_ send (_ withPathCallbackRecursive(path, callback)))
     path
   }
 

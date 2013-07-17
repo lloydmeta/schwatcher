@@ -1,13 +1,13 @@
 package com.beachape.filemanagement
 
 import akka.actor.ActorSystem
+import akka.testkit.{TestActorRef, TestKit}
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardWatchEventKinds._
 import org.scalatest.BeforeAndAfter
 import org.scalatest.FunSpec
 import org.scalatest.matchers.ShouldMatchers
-import akka.testkit.{TestActorRef, TestKit}
-import java.nio.file.Files
-import java.nio.file.StandardWatchEventKinds._
-import java.nio.file.Path
 
 class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
   with FunSpec

@@ -1,9 +1,9 @@
 package com.beachape.filemanagement
 
-import java.nio.file.{FileVisitResult, SimpleFileVisitor, Files, Path}
-import java.nio.file.attribute.BasicFileAttributes
-import scala.reflect.io.File
 import com.typesafe.scalalogging.slf4j.Logging
+import java.nio.file.attribute.BasicFileAttributes
+import java.nio.file.{FileVisitResult, SimpleFileVisitor, Files, Path}
+import scala.reflect.io.File
 
 /**
  * Trait for allowing a block of code to be run recursively given a directory path
