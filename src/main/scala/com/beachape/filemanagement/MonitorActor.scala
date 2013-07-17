@@ -8,6 +8,8 @@ import com.typesafe.scalalogging.slf4j.Logging
 import java.nio.file.StandardWatchEventKinds._
 import java.nio.file._
 import scala.concurrent.duration._
+import scala.language.existentials
+import scala.language.postfixOps
 
 /**
  * Companion object for creating Monitor actor instances

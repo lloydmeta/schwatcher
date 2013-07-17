@@ -2,6 +2,7 @@ package com.beachape.filemanagement
 
 import com.beachape.filemanagement.RegistryTypes._
 import java.nio.file.{Path, WatchEvent}
+import scala.language.existentials
 
 /*
  * Message case classes to make passing messages
