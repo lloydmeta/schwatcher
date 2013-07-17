@@ -1,8 +1,8 @@
 package com.beachape.filemanagement
 
-import org.scalatest.{PrivateMethodTester, BeforeAndAfter, FunSpec}
+import org.scalatest.{BeforeAndAfter, FunSpec}
 import org.scalatest.matchers.ShouldMatchers
-import java.nio.file.{Path, Paths, Files}
+import java.nio.file.Files
 
 class RecursiveFileActionsSpec extends FunSpec
   with ShouldMatchers
