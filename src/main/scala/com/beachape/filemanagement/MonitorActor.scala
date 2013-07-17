@@ -162,11 +162,23 @@ class MonitorActor(concerrency: Int = 5) extends Actor with Logging with Recursi
       flatMap(registryAgent => registryAgent.await.callbacksForPath(path))
   }
 
-  private def addPathToWatchServiceTask(eventType: WatchEvent.Kind[Path], path: Path) {
+  /**
+   * Adds a path to be monitored by the Watch Service Task
+   *
+   * @param eventType WatchEvent.Kind[Path] Java7 Event type
+   * @param path Path (Java type) to be registered
+   */
+  def addPathToWatchServiceTask(eventType: WatchEvent.Kind[Path], path: Path) {
     watchServiceTask.watch(path, eventType)
   }
 
-  private def recursivelyAddPathToWatchServiceTask(eventType: WatchEvent.Kind[Path], path: Path) {
+  /**
+   * Recursively adds a path to be monitored by the Watch Service Task
+   *
+   * @param eventType WatchEvent.Kind[Path] Java7 Event type
+   * @param path Path (Java type) to be registered
+   */
+  def recursivelyAddPathToWatchServiceTask(eventType: WatchEvent.Kind[Path], path: Path) {
     addPathToWatchServiceTask(eventType, path)
     forEachDir(path) {
       (directory, attributes) =>
