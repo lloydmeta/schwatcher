@@ -59,20 +59,24 @@ class MonitorActor(concerrency: Int = 5) extends Actor with Logging with Recursi
     }
     case message: RegisterCallback => {
       if (message.recursive) {
-        recursivelyAddPathCallback(message.event, message.path, message.callback)
-        recursivelyAddPathToWatchServiceTask(message.event, message.path)
+        // Ensure that only absolute paths are used
+        recursivelyAddPathCallback(message.event, message.path.toAbsolutePath, message.callback)
+        recursivelyAddPathToWatchServiceTask(message.event, message.path.toAbsolutePath)
       }
       else {
-        addPathCallback(message.event, message.path, message.callback)
-        addPathToWatchServiceTask(message.event, message.path)
+        // Ensure that only absolute paths are used
+        addPathCallback(message.event, message.path.toAbsolutePath, message.callback)
+        addPathToWatchServiceTask(message.event, message.path.toAbsolutePath)
       }
 
     }
     case message: UnRegisterCallback => {
       if (message.recursive)
-        recursivelyRemoveCallbacksForPath(message.event, message.path)
+        // Ensure that only absolute paths are used
+        recursivelyRemoveCallbacksForPath(message.event, message.path.toAbsolutePath)
       else
-        removeCallbacksForPath(message.event, message.path)
+        // Ensure that only absolute paths are used
+        removeCallbacksForPath(message.event, message.path.toAbsolutePath)
     }
     case _ => logger.error("Monitor Actor received an unexpected message :( !")
   }

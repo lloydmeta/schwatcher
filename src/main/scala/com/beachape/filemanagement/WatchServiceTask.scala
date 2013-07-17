@@ -41,7 +41,8 @@ class WatchServiceTask(notifyActor: ActorRef) extends Runnable with Logging {
         val key = watchService.take()
         key.pollEvents() foreach { event =>
           val relativePath = event.context().asInstanceOf[Path]
-          val path = key.watchable().asInstanceOf[Path].resolve(relativePath)
+          // Ensure that only absolute paths are used
+          val path = relativePath.toAbsolutePath
           event.kind match {
             // Don't really have a choice here because of type erasure.
             case kind: WatchEvent.Kind[_] if List(ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY).contains(kind) =>
@@ -70,7 +71,10 @@ class WatchServiceTask(notifyActor: ActorRef) extends Runnable with Logging {
    * @param eventType WatchEvent.Kind[Path], one of ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE
    * @return WatchKey a Java7 WatchService WatchKey
    */
-  def watch(path: Path, eventType: WatchEvent.Kind[Path]): WatchKey =
-    path.register(watchService, eventType)
+  def watch(path: Path, eventType: WatchEvent.Kind[Path]): Option[WatchKey] = path match {
+    case path if path.toFile.isDirectory => Some(path.register(watchService, eventType))
+    case path if path.toFile.isFile => Some(path.getParent.register(watchService, eventType))
+    case _ => None
+  }
 
 }

@@ -35,43 +35,93 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
 
   describe("#watch") {
 
-    it("should cause ENTRY_CREATE events to be detectable") {
-      val watchKey = watchServiceTask.watch(tempDirPath, ENTRY_CREATE)
-      Files.createTempFile(tempDirPath, "hello", ".there2")
-      var eventList = watchKey.pollEvents()
-      while (eventList.isEmpty ){
-        eventList = watchKey.pollEvents()
-        Thread.sleep(1000)
+    describe("for ENTRY_CREATE") {
+
+      it("should cause ENTRY_CREATE events to be detectable for a directory path") {
+        val Some(watchKey) = watchServiceTask.watch(tempDirPath, ENTRY_CREATE)
+        Files.createTempFile(tempDirPath, "hello", ".there2")
+        var eventList = watchKey.pollEvents
+        while (eventList.isEmpty ){
+          eventList = watchKey.pollEvents()
+          Thread.sleep(100)
+        }
+        eventList foreach {_.kind() should be(ENTRY_CREATE)}
       }
-      eventList foreach {_.kind() should be(ENTRY_CREATE)}
+
+      it("should cause ENTRY_CREATE events to be detectable for a file path") {
+        val Some(watchKey) = watchServiceTask.watch(tempFileInTempDir, ENTRY_CREATE)
+        Files.createTempFile(tempDirPath, "hello", ".there2")
+        var eventList = watchKey.pollEvents
+        while (eventList.isEmpty ){
+          eventList = watchKey.pollEvents()
+          Thread.sleep(100)
+        }
+        eventList foreach {_.kind() should be(ENTRY_CREATE)}
+      }
+
     }
 
-    it("should cause ENTRY_DELETE events to be detectable") {
-      val file = Files.createTempFile(tempDirPath, "hello", ".there3")
-      val watchKey = watchServiceTask.watch(tempDirPath, ENTRY_DELETE)
-      file.toFile.delete()
-      var eventList = watchKey.pollEvents()
-      while (eventList.isEmpty ){
-        eventList = watchKey.pollEvents()
-        Thread.sleep(1000)
+    describe("for ENTRY_DELETE") {
+
+      it("should cause ENTRY_DELETE events to be detectable for a directory path") {
+        val file = Files.createTempFile(tempDirPath, "hello", ".there3")
+        val Some(watchKey) = watchServiceTask.watch(tempDirPath, ENTRY_DELETE)
+        file.toFile.delete()
+        var eventList = watchKey.pollEvents()
+        while (eventList.isEmpty ){
+          eventList = watchKey.pollEvents()
+          Thread.sleep(100)
+        }
+        eventList foreach {_.kind() should be(ENTRY_DELETE)}
       }
-      eventList foreach {_.kind() should be(ENTRY_DELETE)}
+
+      it("should cause ENTRY_DELETE events to be detectable for a file path") {
+        val file = Files.createTempFile(tempDirPath, "hello", ".there3")
+        val Some(watchKey) = watchServiceTask.watch(file, ENTRY_DELETE)
+        file.toFile.delete()
+        var eventList = watchKey.pollEvents()
+        while (eventList.isEmpty ){
+          eventList = watchKey.pollEvents()
+          Thread.sleep(100)
+        }
+        eventList foreach {_.kind() should be(ENTRY_DELETE)}
+      }
+
     }
 
-    it("should cause ENTRY_MODIFY events to be detectable") {
-      val watchKey = watchServiceTask.watch(tempDirPath, ENTRY_MODIFY)
-      val writer = new BufferedWriter(new FileWriter(tempFileInTempDir.toFile))
-      writer.write(
-        """
-          |Theres text in here !!
-        """)
-      writer.close
-      var eventList = watchKey.pollEvents()
-      while (eventList.isEmpty ){
-        eventList = watchKey.pollEvents()
-        Thread.sleep(1000)
+    describe("for ENTRY_MODIFY") {
+
+      it("should cause ENTRY_MODIFY events to be detectable for a directory path") {
+        val Some(watchKey) = watchServiceTask.watch(tempDirPath, ENTRY_MODIFY)
+        val writer = new BufferedWriter(new FileWriter(tempFileInTempDir.toFile))
+        writer.write(
+          """
+            |Theres text in here !!
+          """)
+        writer.close
+        var eventList = watchKey.pollEvents()
+        while (eventList.isEmpty ){
+          eventList = watchKey.pollEvents()
+          Thread.sleep(100)
+        }
+        eventList foreach {_.kind() should be(ENTRY_MODIFY)}
       }
-      eventList foreach {_.kind() should be(ENTRY_MODIFY)}
+
+      it("should cause ENTRY_DELETE events to be detectable for a file path") {
+        val Some(watchKey) = watchServiceTask.watch(tempFileInTempDir, ENTRY_MODIFY)
+        val writer = new BufferedWriter(new FileWriter(tempFileInTempDir.toFile))
+        writer.write(
+          """
+            |Theres text in here !!
+          """)
+        writer.close
+        var eventList = watchKey.pollEvents()
+        while (eventList.isEmpty ){
+          eventList = watchKey.pollEvents()
+          Thread.sleep(100)
+        }
+        eventList foreach {_.kind() should be(ENTRY_MODIFY)}
+      }
     }
 
   }
