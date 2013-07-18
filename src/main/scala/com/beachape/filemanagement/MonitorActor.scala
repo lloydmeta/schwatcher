@@ -63,7 +63,9 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
     case message: EventAtPath => {
       val (event, path) = (message.event, message.path)
       logger.info(s"Event $event at path: $path")
-      processCallbacksForEventPath(event.asInstanceOf[WatchEvent.Kind[Path]], path.toAbsolutePath)
+      processCallbacksForEventPath(event.asInstanceOf[WatchEvent.Kind[Path]], path.toAbsolutePath)()
+      if (path.toFile.isFile)
+        processCallbacksForEventPath(event.asInstanceOf[WatchEvent.Kind[Path]], path.getParent)(path)
     }
     case message: RegisterCallback => {
       // Ensure that only absolute paths are used
@@ -203,15 +205,17 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
    * the CallbackActor pool to get processed
    *
    * @param event WatchEvent.Kind[Path] Java7 Event type
-   * @param path Path (Java type) to be registered
+   * @param lookupPath Path (Java type) to be registered
+   * @param causerPath Path (Java type) to be sent to the callback, defaults to lookupPath
+   * @return Unit
    */
-  def processCallbacksForEventPath(event: WatchEvent.Kind[Path], path: Path) {
+  def processCallbacksForEventPath(event: WatchEvent.Kind[Path], lookupPath: Path)(causerPath: Path = lookupPath) {
     for {
-      callbacks <- callbacksForPath(event, path)
+      callbacks <- callbacksForPath(event, lookupPath)
       callback <- callbacks
     } {
-      logger.debug(s"Sending callback for path: $path")
-      callbackActorsRoundRobin ! PerformCallback(path, callback)
+      logger.debug(s"Sending callback for path: $causerPath")
+      callbackActorsRoundRobin ! PerformCallback(causerPath, callback)
     }
   }
 
