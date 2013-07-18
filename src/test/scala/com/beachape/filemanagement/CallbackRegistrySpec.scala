@@ -158,7 +158,7 @@ class CallbackRegistrySpec extends FunSpec
     val registry = CallbackRegistry(ENTRY_CREATE)
     val tmpDirPath = Paths get System.getProperty("java.io.tmpdir")
 
-    it("should None by default") {
+    it("should be None by default") {
       registry.callbacksForPath(tmpDirPath).isEmpty should be(true)
     }
 
