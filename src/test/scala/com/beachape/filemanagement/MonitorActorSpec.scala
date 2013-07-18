@@ -15,6 +15,7 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
   with BeforeAndAfter {
 
   val tempFile = java.io.File.createTempFile("fakeFile", ".log")
+  tempFile.deleteOnExit()
   val dummyFunction: Path => Unit = { (path: Path) =>  val bleh = "lala"}
 
   var monitorActorRef = TestActorRef(new MonitorActor)
@@ -32,6 +33,11 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
     val tempDirLevel1Path = Files.createTempDirectory(tempDirPath, "level1")
     val tempDirLevel2Path = Files.createTempDirectory(tempDirLevel1Path, "level2")
     val tempFileInTempDir = Files.createTempFile(tempDirPath, "hello", ".there")
+
+    tempDirPath.toFile.deleteOnExit()
+    tempDirLevel1Path.toFile.deleteOnExit()
+    tempDirLevel2Path.toFile.deleteOnExit()
+    tempFileInTempDir.toFile.deleteOnExit()
 
     describe("#addPathCallback") {
 
@@ -125,6 +131,7 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
 
       it("should return Some[Callbacks] that does not contain callbacks for paths never registered") {
         val tempFile2 = java.io.File.createTempFile("fakeFile2", ".log")
+        tempFile2.deleteOnExit()
         monitorActor.callbacksForPath(ENTRY_CREATE, tempFile2.toPath).isEmpty should be(true)
       }
 

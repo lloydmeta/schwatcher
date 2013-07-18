@@ -41,7 +41,7 @@ class WatchServiceTask(notifyActor: ActorRef) extends Runnable with Logging {
         val key = watchService.take()
         key.pollEvents() foreach { event =>
           val relativePath = event.context().asInstanceOf[Path]
-          val path = key.watchable().asInstanceOf[Path].resolve(relativePath)
+          val path = contextAbsolutePath(key, relativePath)
           event.kind match {
             // Don't really have a choice here because of type erasure.
             case kind: WatchEvent.Kind[_] if List(ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY).contains(kind) =>
@@ -55,7 +55,7 @@ class WatchServiceTask(notifyActor: ActorRef) extends Runnable with Logging {
       case e: InterruptedException =>
         logger.info("Interrupting, bye!")
     } finally {
-      watchService.close()
+      stopService()
     }
   }
 
@@ -71,9 +71,33 @@ class WatchServiceTask(notifyActor: ActorRef) extends Runnable with Logging {
    * @return WatchKey a Java7 WatchService WatchKey
    */
   def watch(path: Path, eventType: WatchEvent.Kind[Path]): Option[WatchKey] = path match {
-    case path if path.toFile.isDirectory => Some(path.register(watchService, eventType))
-    case path if path.toFile.isFile => Some(path.getParent.register(watchService, eventType))
+    case _ if path.toFile.isDirectory => Some(path.register(watchService, eventType))
+    case _ if path.toFile.isFile => Some(path.getParent.register(watchService, eventType))
     case _ => None
   }
 
+  /**
+   * Returns the absolute path for a given relative path taken from
+   * the context of a WatchService event by using the key's watchable
+   * path as a resolver
+   *
+   * This is actually taken from http://www.javacodegeeks.com/2013/04/watchservice-combined-with-akka-actors.html
+   *
+   * @param key WatchKey
+   * @param contextPath Path relative to the key's watchable
+   * @return Path
+   */
+  def contextAbsolutePath(key: WatchKey, contextPath: Path): Path = {
+    key.watchable().asInstanceOf[Path].resolve(contextPath)
+  }
+
+  /**
+   * Method for stopping the WatchService
+   *
+   * Just a wrapper in a public method
+   */
+  def stopService() {
+    logger.debug("Stopping WatchService")
+    watchService.close()
+  }
 }

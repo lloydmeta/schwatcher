@@ -70,6 +70,8 @@ class CallbackRegistrySpec extends FunSpec
 
     val tmpDirPath = Paths get System.getProperty("java.io.tmpdir")
     val newTmpDir = Files.createTempDirectory(tmpDirPath, "test")
+    newTmpDir.toFile.deleteOnExit()
+
     val callback = {
       (path: Path) => println(path.toString)
     }
@@ -93,6 +95,10 @@ class CallbackRegistrySpec extends FunSpec
     val tempDirLevel1Path = Files.createTempDirectory(tempDirPath, "level1")
     val tempDirLevel2Path = Files.createTempDirectory(tempDirLevel1Path, "level2")
     val tempFileInTempDir = Files.createTempFile(tempDirPath, "hello", ".there")
+    tempDirPath.toFile.deleteOnExit()
+    tempDirLevel1Path.toFile.deleteOnExit()
+    tempDirLevel2Path.toFile.deleteOnExit()
+    tempFileInTempDir.toFile.deleteOnExit()
 
     describe("#withPathCallbackRecursive") {
 
