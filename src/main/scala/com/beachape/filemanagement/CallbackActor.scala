@@ -2,6 +2,7 @@ package com.beachape.filemanagement
 
 import akka.actor.{Actor, Props}
 import com.typesafe.scalalogging.slf4j.Logging
+import com.beachape.filemanagement.Messages.PerformCallback
 
 /**
  * Companion object for CallbackActor to allow easy creation of

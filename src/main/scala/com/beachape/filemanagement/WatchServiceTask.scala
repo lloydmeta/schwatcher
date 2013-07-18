@@ -5,6 +5,7 @@ import collection.JavaConversions._
 import com.typesafe.scalalogging.slf4j.Logging
 import java.nio.file.StandardWatchEventKinds._
 import java.nio.file.{WatchKey, WatchEvent, Path, FileSystems}
+import com.beachape.filemanagement.Messages.EventAtPath
 
 
 /**

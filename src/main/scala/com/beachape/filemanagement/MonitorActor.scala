@@ -11,6 +11,7 @@ import scala.concurrent.duration._
 import scala.language.existentials
 import scala.language.postfixOps
 import akka.routing.SmallestMailboxRouter
+import com.beachape.filemanagement.Messages._
 
 /**
  * Companion object for creating Monitor actor instances
