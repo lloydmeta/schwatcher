@@ -44,6 +44,17 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
   tempDirLevel2Path.toFile.deleteOnExit()
   tempFileInTempDir.toFile.deleteOnExit()
 
+  describe("construction via Props factory") {
+
+    it("should throw an error when concurrency parameter is set to less than 1") {
+      val thrown = intercept[IllegalArgumentException] {
+        TestActorRef(MonitorActor(0))
+      }
+      thrown.getMessage should be("requirement failed: Callback concurrency requested is 0 but it should at least be 1")
+    }
+
+  }
+
   describe("methods testing") {
 
     describe("#addPathCallback") {
