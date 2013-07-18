@@ -77,24 +77,27 @@ class WatchServiceTask(notifyActor: ActorRef) extends Runnable with Logging {
   }
 
   /**
-   * Returns the absolute path for a given relative path taken from
-   * the context of a WatchService event by using the key's watchable
-   * path as a resolver
+   * Returns the absolute path for a given event.context().asInstancOf[Path]
+   * path taken from a WatchService event
    *
    * This is actually taken from http://www.javacodegeeks.com/2013/04/watchservice-combined-with-akka-actors.html
+   * The way it works is a context is taken from the events originating
+   * from a WatchKey, which itself is registered to an actual watchable
+   * object. In this case, the watchable object is a Path. By using
+   * the watchable object as a path and calling resolve, passing in the relative
+   * path obtained from the context, we obtain the "full" relative-to-watchable path.
+   * Afterwards, toAbsolutePath is called to get the real absolute path.
    *
    * @param key WatchKey
    * @param contextPath Path relative to the key's watchable
    * @return Path
    */
   def contextAbsolutePath(key: WatchKey, contextPath: Path): Path = {
-    key.watchable().asInstanceOf[Path].resolve(contextPath)
+    key.watchable().asInstanceOf[Path].resolve(contextPath).toAbsolutePath
   }
 
   /**
-   * Method for stopping the WatchService
-   *
-   * Just a wrapper in a public method
+   * Stops the WatchService current
    */
   def stopService() {
     logger.debug("Stopping WatchService")
