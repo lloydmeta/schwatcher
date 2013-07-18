@@ -83,7 +83,7 @@ class CallbackRegistry(val eventType: WatchEvent.Kind[Path], pathToCallbacksMap:
   def withoutCallbacksForPathRecursive(path: Path): CallbackRegistry = {
     var callbackRegistry = withoutCallbacksForPath(path)
     forEachDir(path) { (containedDirPath, _) =>
-      callbackRegistry = withoutCallbacksForPath(containedDirPath)
+      callbackRegistry = callbackRegistry.withoutCallbacksForPath(containedDirPath)
     }
     callbackRegistry
   }
