@@ -50,3 +50,10 @@ sealed case class UnRegisterCallback(
                                     event: WatchEvent.Kind[Path],
                                     recursive: Boolean = false,
                                     path: Path)
+
+/**
+ * Message case class for telling a CallbackActor to perform a callback
+ * @param path Path (Java object) pointing to a file/directory
+ * @param callback (Path) => Unit type function
+ */
+sealed case class PerformCallback(path: Path, callback: Callback)

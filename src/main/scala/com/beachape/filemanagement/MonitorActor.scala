@@ -10,6 +10,7 @@ import java.nio.file._
 import scala.concurrent.duration._
 import scala.language.existentials
 import scala.language.postfixOps
+import akka.routing.SmallestMailboxRouter
 
 /**
  * Companion object for creating Monitor actor instances
@@ -22,7 +23,7 @@ object MonitorActor {
    * @param concurrency Integer, the number of concurrent threads for handling callbacks
    * @return Props for instantiating a MonitorActor
    */
-  def apply(concurrency: Int) = Props(new MonitorActor(concurrency))
+  def apply(concurrency: Int = 5) = Props(new MonitorActor(concurrency))
 }
 
 /**
@@ -31,10 +32,14 @@ object MonitorActor {
  * Should be instantiated with Props provided via companion object factory
  * method
  */
-class MonitorActor(concerrency: Int = 5) extends Actor with Logging with RecursiveFileActions {
+class MonitorActor(concurrency: Int = 5) extends Actor with Logging with RecursiveFileActions {
 
   implicit val timeout = Timeout(10 seconds)
   implicit val system = context.system
+
+  val callbackActorsRoundRobin = context.actorOf(
+    CallbackActor().withRouter(SmallestMailboxRouter(concurrency)),
+    "callbackActorsRoundRobin")
 
   private val eventTypeCallbackRegistryMap = Map(
     ENTRY_CREATE -> Agent(CallbackRegistry(ENTRY_CREATE)),
@@ -57,8 +62,8 @@ class MonitorActor(concerrency: Int = 5) extends Actor with Logging with Recursi
   def receive = {
     case message: EventAtPath => {
       val (event, path) = (message.event, message.path)
-      val absolutePath = path.toAbsolutePath
-      logger.info(s"Event $event at path: $absolutePath")
+      logger.info(s"Event $event at path: $path")
+      processCallbacksForEventPath(event.asInstanceOf[WatchEvent.Kind[Path]], path.toAbsolutePath)
     }
     case message: RegisterCallback => {
       // Ensure that only absolute paths are used
@@ -175,6 +180,7 @@ class MonitorActor(concerrency: Int = 5) extends Actor with Logging with Recursi
    * @param path Path (Java type) to be registered
    */
   def addPathToWatchServiceTask(eventType: WatchEvent.Kind[Path], path: Path) {
+    logger.debug("Adding path to WatchServiceTask")
     watchServiceTask.watch(path, eventType)
   }
 
@@ -189,6 +195,23 @@ class MonitorActor(concerrency: Int = 5) extends Actor with Logging with Recursi
     forEachDir(path) {
       (directory, attributes) =>
         addPathToWatchServiceTask(eventType, directory)
+    }
+  }
+
+  /**
+   * Finds the callbacks for a given EventType and path and sends them all to
+   * the CallbackActor pool to get processed
+   *
+   * @param event WatchEvent.Kind[Path] Java7 Event type
+   * @param path Path (Java type) to be registered
+   */
+  def processCallbacksForEventPath(event: WatchEvent.Kind[Path], path: Path) {
+    for {
+      callbacks <- callbacksForPath(event, path)
+      callback <- callbacks
+    } {
+      logger.debug(s"Sending callback for path: $path")
+      callbackActorsRoundRobin ! PerformCallback(path, callback)
     }
   }
 
