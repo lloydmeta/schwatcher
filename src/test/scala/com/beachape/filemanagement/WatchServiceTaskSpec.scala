@@ -1,6 +1,6 @@
 package com.beachape.filemanagement
 
-import java.nio.file.Files
+import java.nio.file.{Path, Files}
 import java.nio.file.StandardWatchEventKinds._
 import org.scalatest.BeforeAndAfter
 import org.scalatest.FunSpec
@@ -26,11 +26,14 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
   val dummyActor = TestActorRef[DummyActor]
   var watchServiceTask = WatchServiceTask(dummyActor)
 
-  val tempDirPath = Files.createTempDirectory("root")
-  val tempFileInTempDir = Files.createTempFile(tempDirPath, "hello", ".there")
+  var tempDirPath = Files.createTempDirectory("root")
+  var tempFileInTempDir = Files.createTempFile(tempDirPath.toAbsolutePath, "hello", ".there")
+  tempDirPath.toFile.deleteOnExit()
 
   before {
     watchServiceTask = WatchServiceTask(dummyActor)
+    tempFileInTempDir = Files.createTempFile(tempDirPath.toAbsolutePath, "hello", ".there")
+    tempFileInTempDir.toFile.deleteOnExit()
   }
 
   describe("#watch") {
@@ -39,7 +42,7 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
 
       it("should cause ENTRY_CREATE events to be detectable for a directory path") {
         val Some(watchKey) = watchServiceTask.watch(tempDirPath, ENTRY_CREATE)
-        Files.createTempFile(tempDirPath, "hello", ".there2")
+        Files.createTempFile(tempDirPath.toAbsolutePath, "hello", ".there2")
         var eventList = watchKey.pollEvents
         while (eventList.isEmpty ){
           eventList = watchKey.pollEvents()
@@ -50,7 +53,7 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
 
       it("should cause ENTRY_CREATE events to be detectable for a file path") {
         val Some(watchKey) = watchServiceTask.watch(tempFileInTempDir, ENTRY_CREATE)
-        Files.createTempFile(tempDirPath, "hello", ".there2")
+        Files.createTempFile(tempDirPath.toAbsolutePath, "hello", ".there2")
         var eventList = watchKey.pollEvents
         while (eventList.isEmpty ){
           eventList = watchKey.pollEvents()
@@ -59,14 +62,30 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
         eventList foreach {_.kind() should be(ENTRY_CREATE)}
       }
 
+      it("should have the correct path in the event") {
+        val Some(watchKey) = watchServiceTask.watch(tempDirPath, ENTRY_CREATE)
+        val fileCreated = Files.createTempFile(tempDirPath.toAbsolutePath, "hello", ".there2")
+        var eventList = watchKey.pollEvents
+        while (eventList.isEmpty ){
+          eventList = watchKey.pollEvents()
+          Thread.sleep(100)
+        }
+        println(tempDirPath.toAbsolutePath)
+        println(tempDirPath.toRealPath())
+        println("created file path")
+        println(fileCreated.toRealPath().toAbsolutePath)
+        println(fileCreated.toFile.getAbsolutePath)
+        println("created file path..")
+        eventList foreach {_.context().asInstanceOf[Path].toRealPath() should be(fileCreated.toRealPath}
+      }
+
     }
 
     describe("for ENTRY_DELETE") {
 
       it("should cause ENTRY_DELETE events to be detectable for a directory path") {
-        val file = Files.createTempFile(tempDirPath, "hello", ".there3")
         val Some(watchKey) = watchServiceTask.watch(tempDirPath, ENTRY_DELETE)
-        file.toFile.delete()
+        tempFileInTempDir.toFile.delete()
         var eventList = watchKey.pollEvents()
         while (eventList.isEmpty ){
           eventList = watchKey.pollEvents()
@@ -76,15 +95,25 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
       }
 
       it("should cause ENTRY_DELETE events to be detectable for a file path") {
-        val file = Files.createTempFile(tempDirPath, "hello", ".there3")
-        val Some(watchKey) = watchServiceTask.watch(file, ENTRY_DELETE)
-        file.toFile.delete()
+        val Some(watchKey) = watchServiceTask.watch(tempFileInTempDir, ENTRY_DELETE)
+        tempFileInTempDir.toFile.delete()
         var eventList = watchKey.pollEvents()
         while (eventList.isEmpty ){
           eventList = watchKey.pollEvents()
           Thread.sleep(100)
         }
         eventList foreach {_.kind() should be(ENTRY_DELETE)}
+      }
+
+      it("should have the correct path in the event") {
+        val Some(watchKey) = watchServiceTask.watch(tempDirPath, ENTRY_DELETE)
+        tempFileInTempDir.toFile.delete()
+        var eventList = watchKey.pollEvents()
+        while (eventList.isEmpty ){
+          eventList = watchKey.pollEvents()
+          Thread.sleep(100)
+        }
+        eventList foreach {_.context().asInstanceOf[Path].toAbsolutePath should be(tempFileInTempDir.toAbsolutePath)}
       }
 
     }
@@ -107,12 +136,12 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
         eventList foreach {_.kind() should be(ENTRY_MODIFY)}
       }
 
-      it("should cause ENTRY_DELETE events to be detectable for a file path") {
+      it("should cause ENTRY_MODIFY events to be detectable for a file path") {
         val Some(watchKey) = watchServiceTask.watch(tempFileInTempDir, ENTRY_MODIFY)
         val writer = new BufferedWriter(new FileWriter(tempFileInTempDir.toFile))
         writer.write(
           """
-            |Theres text in here !!
+            |Theres text in here again !!
           """)
         writer.close
         var eventList = watchKey.pollEvents()
@@ -122,6 +151,23 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
         }
         eventList foreach {_.kind() should be(ENTRY_MODIFY)}
       }
+
+      it("should have the correct path in the event") {
+        val Some(watchKey) = watchServiceTask.watch(tempFileInTempDir, ENTRY_MODIFY)
+        val writer = new BufferedWriter(new FileWriter(tempFileInTempDir.toFile))
+        writer.write(
+          """
+            |Theres text in here wee!!
+          """)
+        writer.close
+        var eventList = watchKey.pollEvents()
+        while (eventList.isEmpty ){
+          eventList = watchKey.pollEvents()
+          Thread.sleep(100)
+        }
+        eventList foreach {_.context().asInstanceOf[Path].toAbsolutePath should be(tempFileInTempDir.toAbsolutePath)}
+      }
+
     }
 
   }

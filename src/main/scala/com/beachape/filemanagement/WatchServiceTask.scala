@@ -41,8 +41,7 @@ class WatchServiceTask(notifyActor: ActorRef) extends Runnable with Logging {
         val key = watchService.take()
         key.pollEvents() foreach { event =>
           val relativePath = event.context().asInstanceOf[Path]
-          // Ensure that only absolute paths are used
-          val path = relativePath.toAbsolutePath
+          val path = key.watchable().asInstanceOf[Path].resolve(relativePath)
           event.kind match {
             // Don't really have a choice here because of type erasure.
             case kind: WatchEvent.Kind[_] if List(ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY).contains(kind) =>
