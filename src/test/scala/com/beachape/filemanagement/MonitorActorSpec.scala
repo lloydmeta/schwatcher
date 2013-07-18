@@ -1,7 +1,7 @@
 package com.beachape.filemanagement
 
 import akka.actor.ActorSystem
-import akka.testkit.{TestActorRef, TestKit}
+import akka.testkit.{ImplicitSender, TestActorRef, TestKit}
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardWatchEventKinds._
@@ -12,7 +12,8 @@ import org.scalatest.matchers.ShouldMatchers
 class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
   with FunSpec
   with ShouldMatchers
-  with BeforeAndAfter {
+  with BeforeAndAfter
+  with ImplicitSender {
 
   val tempFile = java.io.File.createTempFile("fakeFile", ".log")
   tempFile.deleteOnExit()
@@ -21,10 +22,13 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
   var monitorActorRef = TestActorRef(new MonitorActor)
   var monitorActor = monitorActorRef.underlyingActor
 
+  var counter = 0
+
   after {
     // Create a new actor for each test
     monitorActorRef = TestActorRef(new MonitorActor)
     monitorActor = monitorActorRef.underlyingActor
+    counter = 0
   }
 
   describe("methods testing") {
@@ -133,6 +137,39 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
         val tempFile2 = java.io.File.createTempFile("fakeFile2", ".log")
         tempFile2.deleteOnExit()
         monitorActor.callbacksForPath(ENTRY_CREATE, tempFile2.toPath).isEmpty should be(true)
+      }
+
+    }
+
+    describe("#processCallbacksForEventPath") {
+
+      val addAndSend = { (number: Int, path: Path) =>
+        counter += number
+        testActor ! counter
+      }
+
+      it("should get the proper callback for a file path") {
+        monitorActor.addPathCallback(ENTRY_CREATE, tempDirPath, addAndSend(6, _))
+        monitorActor.addPathCallback(ENTRY_CREATE, tempDirLevel2Path, addAndSend(6, _))
+        monitorActor.addPathCallback(ENTRY_CREATE, tempFileInTempDir, addAndSend(5, _))
+        monitorActor.processCallbacksForEventPath(ENTRY_CREATE, tempFileInTempDir)()
+        expectMsg(5)
+      }
+
+      it("should get the proper callback for a directory") {
+        monitorActor.addPathCallback(ENTRY_CREATE, tempDirPath, addAndSend(6, _))
+        monitorActor.addPathCallback(ENTRY_CREATE, tempDirLevel2Path, addAndSend(6, _))
+        monitorActor.addPathCallback(ENTRY_CREATE, tempFileInTempDir, addAndSend(5, _))
+        monitorActor.processCallbacksForEventPath(ENTRY_CREATE, tempDirPath)()
+        expectMsg(6)
+      }
+
+      it("should properly send the causerPath to the callback function when provided in the second parameter list") {
+        monitorActor.addPathCallback(ENTRY_CREATE, tempDirPath, (path => testActor ! path))
+        monitorActor.addPathCallback(ENTRY_CREATE, tempDirLevel2Path, addAndSend(6, _))
+        monitorActor.addPathCallback(ENTRY_CREATE, tempFileInTempDir, addAndSend(5, _))
+        monitorActor.processCallbacksForEventPath(ENTRY_CREATE, tempDirPath)(tempFileInTempDir)
+        expectMsg(tempFileInTempDir)
       }
 
     }
