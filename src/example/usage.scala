@@ -11,8 +11,12 @@ import java.nio.file.StandardWatchEventKinds._
 implicit val system = ActorSystem("actorSystem")
 val fileMonitorActor = system.actorOf(MonitorActor(concurrency = 2))
 
-val modifyCallbackFile: Callback = { path => println(s"Something was modified in a file: $path")}
-val modifyCallbackDirectory: Callback = { path => println(s"Something was modified in a directory: $path")}
+val modifyCallbackFile: Callback = {
+  path => println(s"Something was modified in a file: $path")
+}
+val modifyCallbackDirectory: Callback = {
+  path => println(s"Something was modified in a directory: $path")
+}
 
 val desktop = Paths get "/Users/lloyd/Desktop"
 val desktopFile = Paths get "/Users/lloyd/Desktop/test"
