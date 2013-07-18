@@ -24,7 +24,10 @@ object MonitorActor {
    * @param concurrency Integer, the number of concurrent threads for handling callbacks
    * @return Props for instantiating a MonitorActor
    */
-  def apply(concurrency: Int = 5) = Props(new MonitorActor(concurrency))
+  def apply(concurrency: Int = 5) = {
+    require(concurrency > 1, s"Callback concurrency requested is $concurrency but it should at least be 1")
+    Props(new MonitorActor(concurrency))
+  }
 }
 
 /**
