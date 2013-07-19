@@ -67,9 +67,10 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
 
   def receive = {
     case message: EventAtPath => {
-      val (event, path) = (message.event, message.path)
+      // Only use absolute paths
+      val (event, path) = (message.event, message.path.toAbsolutePath)
       logger.info(s"Event $event at path: $path")
-      processCallbacksForEventPath(event.asInstanceOf[WatchEvent.Kind[Path]], path.toAbsolutePath)()
+      processCallbacksForEventPath(event.asInstanceOf[WatchEvent.Kind[Path]], path)()
       // if the path is a file, check for callbacks that need to be fired for the directory the file is in
       if (path.toFile.isFile)
         processCallbacksForEventPath(event.asInstanceOf[WatchEvent.Kind[Path]], path.getParent)(path)
