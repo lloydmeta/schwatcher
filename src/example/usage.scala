@@ -44,7 +44,7 @@ fileMonitorActor ! RegisterCallback(
 //modify a monitored file
 val writer = new BufferedWriter(new FileWriter(desktopFile.toFile))
 writer.write("Theres text in here wee!!")
-writer.close
+writer.close()
 
 // #=> Something was modified in a file: /Users/a13075/Desktop/test.txt
 //     Something was modified in a directory: /Users/a13075/Desktop/test.txt
