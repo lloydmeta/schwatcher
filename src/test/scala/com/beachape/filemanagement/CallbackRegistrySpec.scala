@@ -122,9 +122,9 @@ class CallbackRegistrySpec extends FunSpec
         registry.callbacksForPath(tempFileInTempDir).map(callbacks =>
           callbacks should contain (dummyFunction))
         registry.callbacksForPath(tempDirLevel1Path).map(callbacks =>
-          callbacks should not contain (dummyFunction))
+          callbacks should not contain dummyFunction)
         registry.callbacksForPath(tempDirLevel2Path).map(callbacks =>
-          callbacks should not contain (dummyFunction))
+          callbacks should not contain dummyFunction)
       }
 
     }

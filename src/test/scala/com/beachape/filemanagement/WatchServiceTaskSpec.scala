@@ -147,7 +147,7 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
           """
             |Theres text in here !!
           """)
-        writer.close
+        writer.close()
         var eventList = watchKey.pollEvents()
         while (eventList.isEmpty){
           eventList = watchKey.pollEvents()
@@ -163,7 +163,7 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
           """
             |Theres text in here again!!
           """)
-        writer.close
+        writer.close()
         var eventList = watchKey.pollEvents()
         while (eventList.isEmpty){
           eventList = watchKey.pollEvents()
@@ -181,7 +181,7 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
             """
               |Theres text in here wee!!
             """)
-          writer.close
+          writer.close()
           var eventList = watchKey.pollEvents()
           while (eventList.isEmpty){
             eventList = watchKey.pollEvents()
