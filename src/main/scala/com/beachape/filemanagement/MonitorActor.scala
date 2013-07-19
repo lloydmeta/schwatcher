@@ -71,8 +71,9 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
       val (event, path) = (message.event, message.path.toAbsolutePath)
       logger.info(s"Event $event at path: $path")
       processCallbacksForEventPath(event.asInstanceOf[WatchEvent.Kind[Path]], path)()
-      // if the path is a file, check for callbacks that need to be fired for the directory the file is in
-      if (path.toFile.isFile)
+      // If event is ENTRY_DELETE or the path is a file, check for callbacks that need
+      // to be fired for the directory the file is in
+      if (event == ENTRY_DELETE || path.toFile.isFile)
         processCallbacksForEventPath(event.asInstanceOf[WatchEvent.Kind[Path]], path.getParent)(path)
     }
     case message: RegisterCallback => {
