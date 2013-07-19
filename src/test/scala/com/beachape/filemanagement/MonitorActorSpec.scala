@@ -94,9 +94,9 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
       it("should not add callbacks recursively if given a file path") {
         monitorActor.recursivelyAddPathCallback(ENTRY_CREATE, tempFileInTempDir, dummyFunction)
         monitorActor.callbacksForPath(ENTRY_CREATE, tempDirLevel1Path).map(callbacks =>
-          callbacks should not contain (dummyFunction))
+          callbacks should not contain dummyFunction)
         monitorActor.callbacksForPath(ENTRY_CREATE, tempDirLevel2Path).map(callbacks =>
-          callbacks should not contain (dummyFunction))
+          callbacks should not contain dummyFunction)
       }
 
     }
@@ -179,7 +179,7 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
       }
 
       it("should properly send the causerPath to the callback function when provided in the second parameter list") {
-        monitorActor.addPathCallback(ENTRY_DELETE, tempDirPath, (path => testActor ! path))
+        monitorActor.addPathCallback(ENTRY_DELETE, tempDirPath, path => testActor ! path)
         monitorActor.addPathCallback(ENTRY_DELETE, tempDirLevel2Path, addAndSend(6, _))
         monitorActor.addPathCallback(ENTRY_DELETE, tempFileInTempDir, addAndSend(5, _))
         monitorActor.processCallbacksForEventPath(ENTRY_DELETE, tempDirPath)(tempFileInTempDir)
@@ -197,21 +197,21 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
       val callbackFunc = { (path: Path) => val receivedPath = path }
 
       it("should register a callback when given a file path") {
-        val registerFileCallbackMessage = RegisterCallback(ENTRY_CREATE, false, tempFileInTempDir, callbackFunc)
+        val registerFileCallbackMessage = RegisterCallback(ENTRY_CREATE, recursive = false, tempFileInTempDir, callbackFunc)
         monitorActorRef ! registerFileCallbackMessage
         val Some(callbacks) = monitorActor.callbacksForPath(ENTRY_CREATE, tempFileInTempDir)
         callbacks.contains(callbackFunc) should be(true)
       }
 
       it("should register a callback when given a directory path") {
-        val registerFileCallbackMessage = RegisterCallback(ENTRY_MODIFY, false, tempDirPath, callbackFunc)
+        val registerFileCallbackMessage = RegisterCallback(ENTRY_MODIFY, recursive = false, tempDirPath, callbackFunc)
         monitorActorRef ! registerFileCallbackMessage
         val Some(callbacks) = monitorActor.callbacksForPath(ENTRY_MODIFY, tempDirPath)
         callbacks.contains(callbackFunc) should be(true)
       }
 
       it("should register a callback recursively for a directory path") {
-        val registerFileCallbackMessage = RegisterCallback(ENTRY_DELETE, true, tempDirPath, callbackFunc)
+        val registerFileCallbackMessage = RegisterCallback(ENTRY_DELETE, recursive = true, tempDirPath, callbackFunc)
         monitorActorRef ! registerFileCallbackMessage
         val Some(callbacksForTempDirLevel1) = monitorActor.callbacksForPath(ENTRY_DELETE, tempDirLevel1Path)
         callbacksForTempDirLevel1.contains(callbackFunc) should be(true)
@@ -220,7 +220,7 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
       }
 
       it("should not register a callback for a file inside a directory tree even when called recursively") {
-        val registerFileCallbackMessage = RegisterCallback(ENTRY_CREATE, true, tempDirPath, callbackFunc)
+        val registerFileCallbackMessage = RegisterCallback(ENTRY_CREATE, recursive = true, tempDirPath, callbackFunc)
         monitorActorRef ! registerFileCallbackMessage
         monitorActor.callbacksForPath(ENTRY_CREATE, tempFileInTempDir).isEmpty should be(true)
       }
@@ -232,29 +232,29 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
       val callbackFunc = { (path: Path) => val receivedPath = path }
 
       it("should un-register a callback when given a file path") {
-        monitorActorRef ! RegisterCallback(ENTRY_CREATE, false, tempFileInTempDir, callbackFunc)
-        monitorActorRef ! UnRegisterCallback(ENTRY_CREATE, false, tempFileInTempDir)
+        monitorActorRef ! RegisterCallback(ENTRY_CREATE, recursive = false, tempFileInTempDir, callbackFunc)
+        monitorActorRef ! UnRegisterCallback(ENTRY_CREATE, recursive = false, tempFileInTempDir)
         monitorActor.callbacksForPath(ENTRY_CREATE, tempFileInTempDir).isEmpty should be(true)
       }
 
       it("should un-register a callback when given a directory path") {
-        monitorActorRef ! RegisterCallback(ENTRY_DELETE, false, tempDirPath, callbackFunc)
-        monitorActorRef ! UnRegisterCallback(ENTRY_DELETE, false, tempDirPath)
+        monitorActorRef ! RegisterCallback(ENTRY_DELETE, recursive = false, tempDirPath, callbackFunc)
+        monitorActorRef ! UnRegisterCallback(ENTRY_DELETE, recursive = false, tempDirPath)
         monitorActor.callbacksForPath(ENTRY_DELETE, tempDirPath).isEmpty should be(true)
       }
 
       it("should un-register a callback recursively for a directory path") {
-        monitorActorRef ! RegisterCallback(ENTRY_MODIFY, true, tempDirPath, callbackFunc)
-        monitorActorRef ! UnRegisterCallback(ENTRY_MODIFY, true, tempDirPath)
+        monitorActorRef ! RegisterCallback(ENTRY_MODIFY, recursive = true, tempDirPath, callbackFunc)
+        monitorActorRef ! UnRegisterCallback(ENTRY_MODIFY, recursive = true, tempDirPath)
         println(monitorActor.callbacksForPath(ENTRY_MODIFY, tempDirLevel1Path))
         monitorActor.callbacksForPath(ENTRY_MODIFY, tempDirLevel1Path).isEmpty should be(true)
         monitorActor.callbacksForPath(ENTRY_MODIFY, tempDirLevel2Path).isEmpty should be(true)
       }
 
       it("should not un-register a callback for a file inside a directory tree even when called recursively") {
-        monitorActorRef ! RegisterCallback(ENTRY_CREATE, true, tempDirPath, callbackFunc)
-        monitorActorRef ! RegisterCallback(ENTRY_CREATE, true, tempFileInTempDir, callbackFunc)
-        monitorActorRef ! UnRegisterCallback(ENTRY_CREATE, true, tempDirPath)
+        monitorActorRef ! RegisterCallback(ENTRY_CREATE, recursive = true, tempDirPath, callbackFunc)
+        monitorActorRef ! RegisterCallback(ENTRY_CREATE, recursive = true, tempFileInTempDir, callbackFunc)
+        monitorActorRef ! UnRegisterCallback(ENTRY_CREATE, recursive = true, tempDirPath)
         monitorActor.callbacksForPath(ENTRY_CREATE, tempFileInTempDir).isEmpty should be(false)
       }
 
@@ -266,23 +266,23 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
       val callbackFunc = { (path: Path) => testActor ! TestResponse(s"path is $path") }
 
       it("should cause callback to be fired for a registered file path") {
-        val registerFileCallbackMessage = RegisterCallback(ENTRY_CREATE, false, tempFileInTempDir, callbackFunc)
+        val registerFileCallbackMessage = RegisterCallback(ENTRY_CREATE, recursive = false, tempFileInTempDir, callbackFunc)
         monitorActorRef ! registerFileCallbackMessage
         monitorActorRef ! EventAtPath(ENTRY_CREATE, tempFileInTempDir)
         expectMsg(TestResponse(s"path is $tempFileInTempDir"))
       }
 
       it("should cause callback to be fired for a registered directory path") {
-        val registerFileCallbackMessage = RegisterCallback(ENTRY_MODIFY, false, tempDirPath, callbackFunc)
+        val registerFileCallbackMessage = RegisterCallback(ENTRY_MODIFY, recursive = false, tempDirPath, callbackFunc)
         monitorActorRef ! registerFileCallbackMessage
         monitorActorRef ! EventAtPath(ENTRY_MODIFY, tempFileInTempDir)
         expectMsg(TestResponse(s"path is $tempFileInTempDir"))
       }
 
       it("should case callbacks to to fired for a registered directory path AND the file path itself") {
-        val registerFileCallbackMessageDirectory = RegisterCallback(ENTRY_DELETE, false, tempDirPath,
+        val registerFileCallbackMessageDirectory = RegisterCallback(ENTRY_DELETE, recursive = false, tempDirPath,
           path => testActor ! TestResponse(s"directory callback path is $path"))
-        val registerFileCallbackMessageFile = RegisterCallback(ENTRY_DELETE, false, tempFileInTempDir,
+        val registerFileCallbackMessageFile = RegisterCallback(ENTRY_DELETE, recursive = false, tempFileInTempDir,
           path => testActor ! TestResponse(s"file callback path is $path"))
         monitorActorRef ! registerFileCallbackMessageDirectory
         monitorActorRef ! registerFileCallbackMessageFile
