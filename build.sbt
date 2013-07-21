@@ -21,3 +21,41 @@ testOptions in Test += Tests.Setup(classLoader =>
     .getMethod("getLogger", classLoader.loadClass("java.lang.String"))
     .invoke(null, "ROOT")
 )
+
+publishTo <<= version { v: String =>
+  val nexus = "https://oss.sonatype.org/"
+  if (v.trim.endsWith("SNAPSHOT"))
+    Some("snapshots" at nexus + "content/repositories/snapshots")
+  else
+    Some("releases" at nexus + "service/local/staging/deploy/maven2")
+}
+
+organization := "com.beachape.filemanagement"
+
+publishMavenStyle := true
+
+publishArtifact in Test := false
+
+pomIncludeRepository := { _ => false }
+
+pomExtra := (
+  <url>https://github.com/lloydmeta/schwatcher</url>
+  <licenses>
+    <license>
+      <name>MIT</name>
+      <url>http://opensource.org/licenses/MIT</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  <scm>
+    <url>git@github.com:lloydmeta/schwatcher.git</url>
+    <connection>scm:git:git@github.com:lloydmeta/schwatcher.git</connection>
+  </scm>
+  <developers>
+    <developer>
+      <id>lloydmeta</id>
+      <name>Lloyd Chan</name>
+      <url>http://beachape.com</url>
+    </developer>
+  </developers>
+)
