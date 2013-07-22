@@ -118,8 +118,8 @@ Additional library-specific caveats and notes are:
    parent directory are registered for callbacks, both set of callbacks will be fired.
 
 As a result of note 6, you may want to think twice about registering recursive callbacks for `ENTRY_DELETE` because if a
-directory is deleted within a directory, 2 callbacks will be fired, once for the deleted directory and once for the directory
-above it.
+directory is deleted within a directory, 2 callbacks will be fired, once for the path registered for the deleted directory
+and once for the path registered for the directory above it (its parent directory).
 
 License
 ------
