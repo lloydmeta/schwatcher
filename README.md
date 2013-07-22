@@ -9,27 +9,12 @@ of Java7 and allows callbacks to be registered on both directories and files.
 
 As of Java7, the WatchService API was introduced to allow developers to monitor the file system without resorting to an
 external library/dependency like [JNotify](http://jnotify.sourceforge.net/). Unfortunately, it requires you to use a loop
-that blocks in order to retrieve events from the API.
+that blocks in order to retrieve events from the API and does not have recursion support built-in.
 
-Schwatcher will allow you to instantiate an Actor, register callbacks (functions that take a Path and return Unit) to be
-fired for certain [Path](http://docs.oracle.com/javase/7/docs/api/java/nio/file/Path.html)s and [event types](http://docs.oracle.com/javase/7/docs/api/java/nio/file/StandardWatchEventKinds.html),
-then simply wait for the callbacks to be fired. The goal of Schwatcher is to facilitate the use of the Java7 API in Scala in
-a simple way that is in line with the functional programming paradigm.
-
-__Notes__:
-
-1. Callbacks are registered for specific paths and for directory paths can be registered as recursive so that a single
-   callback is fired when an event occurs inside the directory tree.
-2. Callbacks are not checked for uniqueness when registered to a specific path.
-3. A specific path can have multiple callbacks registered to a file [event types](http://docs.oracle.com/javase/7/docs/api/java/nio/file/StandardWatchEventKinds.html),
-   all will be fired.
-4. Callbacks are not guaranteed to be fired in any particular order unless if concurrency is set to 1 on the MonitorActor.
-5. Any event on a file path will bubble up to its immediate parent folder path. This means that if both a file and it's
-   parent directory are registered for callbacks, both set of callbacks will be fired.
-
-As a result of note 5, you may want to think twice about registering recursive callbacks for `ENTRY_DELETE` because if a
-directory is deleted within a directory, 2 callbacks will be fired, once for the deleted directory and once for the directory
-above it.
+Schwatcher will allow you to instantiate a Actor, register callbacks (functions that take a Path and return Unit) to be
+fired for certain [Path](http://docs.oracle.com/javase/7/docs/api/java/nio/file/Path.html)s and [event types](http://docs.oracle.com/javase/7/docs/api/java/nio/file/StandardWatchEventKinds.html)
+by sending messages to it, then simply wait for the callbacks to be fired. The goal of Schwatcher is to facilitate the
+use of the Java7 API in Scala in a simple way that is in line with the functional programming paradigm.
 
 Installation
 ------------
@@ -51,6 +36,17 @@ libraryDependencies += "com.beachape.filemanagement" %% "schwatcher" % "0.0.1-SN
 
 Example Usage
 -------------
+
+The basic workflow is:
+
+1. Instantiate a MonitorActor
+2. Register callbacks via RegisterCallback messages
+3. Carry on
+
+* Optionally, you can un-register _all_ callbacks for a path and event type by sending UnRegisterCallbacks messages.
+* Both RegisterCallback and UnRegisterCallbacks messages have a recursive argument (be sure to see point 5 in the
+  [Caveats section](#caveats))
+
 
 ```scala
 import akka.actor.ActorSystem
@@ -101,7 +97,27 @@ writer.close
 //     Something was modified in a directory: /Users/a13075/Desktop/test.txt
 ```
 
-## License
+Caveats
+-------
+
+1. Callbacks are registered for specific paths and for directory paths can be registered as recursive so that a single
+   callback is fired when an event occurs inside the directory tree.
+2. Callbacks are not checked for uniqueness when registered to a specific path.
+3. A specific path can have multiple callbacks registered to a file [event types](http://docs.oracle.com/javase/7/docs/api/java/nio/file/StandardWatchEventKinds.html),
+   all will be fired.
+4. Callbacks are not guaranteed to be fired in any particular order unless if concurrency is set to 1 on the MonitorActor.
+5. Callbacks that are registered with `recursive=true` are not _persistently-recursive_. That is, they do not propagate
+   to new files or folders created/deleted after registration. Currently, the plan is to have developers handle this themselves
+   in the callback functions.
+6. Any event on a file path will bubble up to its immediate parent folder path. This means that if both a file and it's
+   parent directory are registered for callbacks, both set of callbacks will be fired.
+
+As a result of note 6, you may want to think twice about registering recursive callbacks for `ENTRY_DELETE` because if a
+directory is deleted within a directory, 2 callbacks will be fired, once for the deleted directory and once for the directory
+above it.
+
+License
+------
 
 The MIT License (MIT)
 
