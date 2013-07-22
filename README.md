@@ -16,7 +16,7 @@ fired for certain [Path](http://docs.oracle.com/javase/7/docs/api/java/nio/file/
 by sending messages to it, then simply wait for the callbacks to be fired. The goal of Schwatcher is to facilitate the
 use of the Java7 API in Scala in a simple way that is in line with the functional programming paradigm.
 
-___As of now, only Scala versions 2.10.x are supported__
+__As of now, only Scala versions 2.10.x are supported__
 
 Installation
 ------------
