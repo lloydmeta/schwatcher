@@ -24,7 +24,7 @@ Installation
 Add the following to your `build.sbt`
 
 ```scala
-libraryDependencies += "com.beachape.filemanagement" %% "schwatcher" % "0.0.1"
+libraryDependencies += "com.beachape.filemanagement" %% "schwatcher" % "0.0.2"
 ```
 
 If the above does not work because it cannot be resolved, its likely because it hasn't been synced to Maven central yet.
