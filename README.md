@@ -43,9 +43,9 @@ The basic workflow is:
 2. Register callbacks by sending RegisterCallback messages to the MonitorActor
 3. Carry on
 
-* Optionally, you can un-register _all_ callbacks for a path and event type by sending UnRegisterCallbacks messages.
-* Both RegisterCallback and UnRegisterCallbacks messages have a recursive argument (be sure to see point 5 in the
-  [Caveats section](#caveats))
+* Optionally, you can un-register _all_ callbacks for a path and event type by sending UnRegisterCallback messages.
+* Both RegisterCallback and UnRegisterCallback messages have a recursive argument (be sure to see point 5 in the
+  [Caveats section](#caveats)) that triggers recursive registration and un-registration of callbacks for path.
 
 
 ```scala
