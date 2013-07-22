@@ -33,7 +33,7 @@ In that case, download a SNAPSHOT release of the same version by adding this to 
 ```
 resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 
-libraryDependencies += "com.beachape.filemanagement" %% "schwatcher" % "0.0.1-SNAPSHOT"
+libraryDependencies += "com.beachape.filemanagement" %% "schwatcher" % "0.0.2-SNAPSHOT"
 ```
 
 Example Usage
