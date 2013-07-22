@@ -103,6 +103,8 @@ Caveats
 __Above all things__ understand that library relies on the Java7 WatchService API and has the same constraints, limitations,
 and behaviours according to the implementation for the version of JVM you're using.
 
+Additional library-specific caveats and notes are:
+
 1. Callbacks are registered for specific paths and for directory paths can be registered as recursive so that a single
    callback is fired when an event occurs inside the directory tree.
 2. Callbacks are not checked for uniqueness when registered to a specific path.
