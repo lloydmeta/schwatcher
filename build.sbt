@@ -1,14 +1,18 @@
 name := "schwatcher"
 
-version := "0.0.1-SNAPSHOT"
+version := "0.0.2"
 
-scalaVersion := "2.10.1"
+scalaVersion := "2.10.2"
+
+crossScalaVersions := Seq("2.10.0", "2.10.1", "2.10.2")
+
+crossVersion := CrossVersion.binary
 
 resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
 
 libraryDependencies ++= Seq(
-  "org.scalatest" % "scalatest_2.10" % "1.9.1" % "test",
-  "com.typesafe.akka" % "akka-testkit_2.10" % "2.1.4",
+  "org.scalatest" %% "scalatest" % "1.9.1" % "test",
+  "com.typesafe.akka" %% "akka-testkit" % "2.1.4",
   "com.typesafe.akka" %% "akka-agent" % "2.1.4",
   "com.typesafe" %% "scalalogging-slf4j" % "1.0.1",
   "org.slf4j" % "slf4j-api" % "1.7.1",
