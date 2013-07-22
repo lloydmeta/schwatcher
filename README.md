@@ -11,7 +11,7 @@ As of Java7, the WatchService API was introduced to allow developers to monitor 
 external library/dependency like [JNotify](http://jnotify.sourceforge.net/). Unfortunately, it requires you to use a loop
 that blocks in order to retrieve events from the API and does not have recursion support built-in.
 
-Schwatcher will allow you to instantiate a Actor, register callbacks (functions that take a Path and return Unit) to be
+Schwatcher will allow you to instantiate an Akka actor, register callbacks (functions that take a Path and return Unit) to be
 fired for certain [Path](http://docs.oracle.com/javase/7/docs/api/java/nio/file/Path.html)s and [event types](http://docs.oracle.com/javase/7/docs/api/java/nio/file/StandardWatchEventKinds.html)
 by sending messages to it, then simply wait for the callbacks to be fired. The goal of Schwatcher is to facilitate the
 use of the Java7 API in Scala in a simple way that is in line with the functional programming paradigm.
@@ -40,7 +40,7 @@ Example Usage
 The basic workflow is:
 
 1. Instantiate a MonitorActor
-2. Register callbacks via RegisterCallback messages
+2. Register callbacks by sending RegisterCallback messages to the MonitorActor
 3. Carry on
 
 * Optionally, you can un-register _all_ callbacks for a path and event type by sending UnRegisterCallbacks messages.
@@ -99,6 +99,9 @@ writer.close
 
 Caveats
 -------
+
+__Above all things__ understand that library relies on the Java7 WatchService API and has the same constraints, limitations,
+and behaviours according to the implementation for the version of JVM you're using.
 
 1. Callbacks are registered for specific paths and for directory paths can be registered as recursive so that a single
    callback is fired when an event occurs inside the directory tree.
