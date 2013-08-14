@@ -95,8 +95,8 @@ val writer = new BufferedWriter(new FileWriter(desktopFile.toFile))
 writer.write("Theres text in here wee!!")
 writer.close
 
-// #=> Something was modified in a file: /Users/a13075/Desktop/test.txt
-//     Something was modified in a directory: /Users/a13075/Desktop/test.txt
+// #=> Something was modified in a file: /Users/lloyd/Desktop/test.txt
+//     Something was modified in a directory: /Users/lloyd/Desktop/test.txt
 ```
 
 Caveats
@@ -107,7 +107,7 @@ and behaviours according to the implementation for the version of JVM you're usi
 
 Additional library-specific caveats and notes are:
 
-1. Callbacks are registered for specific paths and for directory paths can be registered as recursive so that a single
+1. Callbacks are registered for specific paths, and for directory paths, can be registered as recursive so that a single
    callback is fired when an event occurs inside the directory tree.
 2. Callbacks are not checked for uniqueness when registered to a specific path.
 3. A specific path can have multiple callbacks registered to a file [event types](http://docs.oracle.com/javase/7/docs/api/java/nio/file/StandardWatchEventKinds.html),
@@ -117,7 +117,7 @@ Additional library-specific caveats and notes are:
    to new files or folders created/deleted after registration. Currently, the plan is to have developers handle this themselves
    in the callback functions.
 6. Any event on a file path will bubble up to its immediate parent folder path. This means that if both a file and it's
-   parent directory are registered for callbacks, both set of callbacks will be fired.
+   parent directory are registered for callbacks, both sets of callbacks will be fired.
 
 As a result of note 6, you may want to think twice about registering recursive callbacks for `ENTRY_DELETE` because if a
 directory is deleted within a directory, 2 callbacks will be fired, once for the path registered for the deleted directory
