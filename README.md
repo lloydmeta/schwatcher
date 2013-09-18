@@ -123,6 +123,10 @@ As a result of note 6, you may want to think twice about registering recursive c
 directory is deleted within a directory, 2 callbacks will be fired, once for the path registered for the deleted directory
 and once for the path registered for the directory above it (its parent directory).
 
+Contributors
+------------
+- (Crdueck)[https://github.com/crdueck]
+
 License
 ------
 
