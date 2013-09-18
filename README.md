@@ -24,7 +24,7 @@ Installation
 Add the following to your `build.sbt`
 
 ```scala
-libraryDependencies += "com.beachape.filemanagement" %% "schwatcher" % "0.0.2"
+libraryDependencies += "com.beachape.filemanagement" %% "schwatcher" % "0.0.3"
 ```
 
 If the above does not work because it cannot be resolved, its likely because it hasn't been synced to Maven central yet.
@@ -33,7 +33,7 @@ In that case, download a SNAPSHOT release of the same version by adding this to 
 ```
 resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 
-libraryDependencies += "com.beachape.filemanagement" %% "schwatcher" % "0.0.2-SNAPSHOT"
+libraryDependencies += "com.beachape.filemanagement" %% "schwatcher" % "0.0.3-SNAPSHOT"
 ```
 
 Example Usage
