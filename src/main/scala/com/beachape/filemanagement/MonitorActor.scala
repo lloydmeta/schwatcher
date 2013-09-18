@@ -40,6 +40,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
 
   implicit val timeout = Timeout(10 seconds)
   implicit val system = context.system
+  implicit val ec = context.dispatcher
 
   // Round-robin of callback performers helps control concurrency
   val callbackActorsRoundRobin = context.actorOf(
@@ -181,7 +182,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
   def callbacksForPath(eventType: WatchEvent.Kind[Path], path: Path): Option[Callbacks] = {
     eventTypeCallbackRegistryMap.
       get(eventType).
-      flatMap(registryAgent => registryAgent.await.callbacksForPath(path))
+      flatMap(registryAgent => registryAgent.get.callbacksForPath(path))
   }
 
   /**
