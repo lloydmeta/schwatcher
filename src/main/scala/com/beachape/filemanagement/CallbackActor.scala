@@ -13,7 +13,7 @@ object CallbackActor {
    * Factory method for props required to spawn a MonitorActor
    * @return Props for spawning an actor
    */
-  def apply() = Props(new CallbackActor)
+  def apply() = Props(classOf[CallbackActor])
 }
 
 /**

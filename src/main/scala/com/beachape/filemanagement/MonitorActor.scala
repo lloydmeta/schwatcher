@@ -12,6 +12,7 @@ import scala.language.existentials
 import scala.language.postfixOps
 import akka.routing.SmallestMailboxRouter
 import com.beachape.filemanagement.Messages._
+import scala.concurrent.Await
 
 /**
  * Companion object for creating Monitor actor instances
@@ -26,7 +27,7 @@ object MonitorActor {
    */
   def apply(concurrency: Int = 5) = {
     require(concurrency > 1, s"Callback concurrency requested is $concurrency but it should at least be 1")
-    Props(new MonitorActor(concurrency))
+    Props(classOf[MonitorActor], concurrency)
   }
 }
 
@@ -40,6 +41,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
 
   implicit val timeout = Timeout(10 seconds)
   implicit val system = context.system
+  implicit val ec = context.dispatcher
 
   // Round-robin of callback performers helps control concurrency
   val callbackActorsRoundRobin = context.actorOf(
@@ -181,7 +183,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
   def callbacksForPath(eventType: WatchEvent.Kind[Path], path: Path): Option[Callbacks] = {
     eventTypeCallbackRegistryMap.
       get(eventType).
-      flatMap(registryAgent => registryAgent.await.callbacksForPath(path))
+      flatMap(registryAgent => Await.result(registryAgent.future, 10 seconds).callbacksForPath(path))
   }
 
   /**

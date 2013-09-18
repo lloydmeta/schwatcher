@@ -5,6 +5,7 @@
 *~
 
 #sbt
+/project/plugins.sbt
 /project/target/
 /project/project/target
 
