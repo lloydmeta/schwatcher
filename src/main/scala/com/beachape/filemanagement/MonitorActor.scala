@@ -43,10 +43,10 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
   implicit val system = context.system
   implicit val ec = context.dispatcher
 
-  // Round-robin of callback performers helps control concurrency
-  val callbackActorsRoundRobin = context.actorOf(
+  // Smallest mailbox router for callback actors
+  val callbackActors = context.actorOf(
     CallbackActor().withRouter(SmallestMailboxRouter(concurrency)),
-    "callbackActorsRoundRobin")
+    "callbackActors")
 
   // Use Akka Agent to help keep things atomic and thread-safe
   private val eventTypeCallbackRegistryMap = Map(
@@ -226,8 +226,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
       callback <- callbacks
     } {
       logger.debug(s"Sending callback for path: $causerPath")
-      callbackActorsRoundRobin ! PerformCallback(causerPath, callback)
+      callbackActors ! PerformCallback(causerPath, callback)
     }
   }
-
 }
