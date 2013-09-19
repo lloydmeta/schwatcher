@@ -2,10 +2,10 @@ package com.beachape.filemanagement
 
 import akka.actor.ActorRef
 import collection.JavaConversions._
+import com.beachape.filemanagement.Messages.EventAtPath
 import com.typesafe.scalalogging.slf4j.Logging
 import java.nio.file.StandardWatchEventKinds._
 import java.nio.file.{WatchKey, WatchEvent, Path, FileSystems}
-import com.beachape.filemanagement.Messages.EventAtPath
 
 
 /**
@@ -71,10 +71,11 @@ class WatchServiceTask(notifyActor: ActorRef) extends Runnable with Logging {
    * @param eventType WatchEvent.Kind[Path], one of ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE
    * @return WatchKey a Java7 WatchService WatchKey
    */
-  def watch(path: Path, eventType: WatchEvent.Kind[Path]): Option[WatchKey] = path match {
-    case _ if path.toFile.isDirectory => Some(path.register(watchService, eventType))
-    case _ if path.toFile.isFile => Some(path.getParent.register(watchService, eventType))
-    case _ => None
+  def watch(path: Path, eventType: WatchEvent.Kind[Path]): Option[WatchKey] = {
+    val fileAtPath = path.toFile
+    if (fileAtPath.isDirectory) Some(path.register(watchService, eventType))
+    else if (fileAtPath.isFile) Some(path.getParent.register(watchService, eventType))
+    else None
   }
 
   /**
