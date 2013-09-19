@@ -36,6 +36,8 @@ resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repos
 libraryDependencies += "com.beachape.filemanagement" %% "schwatcher" % "0.0.3-SNAPSHOT"
 ```
 
+__Those using Akka 2.1.x__ should stay on 0.0.2 as 0.0.3 onwards uses Akka 2.2.1, which [requires some work to upgrade to](http://doc.akka.io/docs/akka/current/project/migration-guide-2.1.x-2.2.x.html).
+
 Example Usage
 -------------
 
