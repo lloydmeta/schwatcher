@@ -40,7 +40,7 @@ class CallbackRegistry(val eventType: WatchEvent.Kind[Path], pathToCallbacksMap:
    */
   def withPathCallback(path: Path, callback: Callback): CallbackRegistry = {
     val totalCallbacksForPath = callback :: pathToCallbacksMap.getOrElse(path, Nil)
-    CallbackRegistry(eventType, pathToCallbacksMap ++ Map(path -> totalCallbacksForPath))
+    CallbackRegistry(eventType, pathToCallbacksMap + (path -> totalCallbacksForPath))
   }
 
   /**
