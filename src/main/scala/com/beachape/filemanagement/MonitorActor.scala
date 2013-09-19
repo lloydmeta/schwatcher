@@ -101,6 +101,18 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
   }
 
   /**
+    * Modify the CallbackRegistry for a given Event type
+    *
+    * @param eventType WatchEvent.Kind[Path] Java7 Event type
+    * @param modify a function to update the CallbackRegistry
+    * @return Unit
+    */
+  def modifyCallbackRegistry(eventType: WatchEvent.Kind[Path]
+                            ,modify: CallbackRegistry => CallbackRegistry): Unit = {
+    eventTypeCallbackRegistryMap.get(eventType) foreach { _ send modify }
+  }
+
+  /**
    * Registers a callback for a path for an Event type
    *
    * If the path does not exist at the time of adding, a log message is created and the
@@ -112,7 +124,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
    * @return Path used for registration
    */
   def addPathCallback(eventType: WatchEvent.Kind[Path], path: Path, callback: Callback): Path = {
-    eventTypeCallbackRegistryMap(eventType) send (_ withPathCallback(path,callback))
+    modifyCallbackRegistry(eventType, { _ withPathCallback(path, callback) })
     path
   }
 
@@ -129,7 +141,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
    * @return Path used for registration
    */
   def recursivelyAddPathCallback(eventType: WatchEvent.Kind[Path], path: Path, callback: Callback): Path = {
-    eventTypeCallbackRegistryMap(eventType) send (_ withPathCallbackRecursive(path, callback))
+    modifyCallbackRegistry(eventType, { _ withPathCallbackRecursive(path, callback) })
     path
   }
 
@@ -147,7 +159,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
    * @return Path used for un-registering callbacks
    */
   def removeCallbacksForPath(eventType: WatchEvent.Kind[Path], path: Path): Path = {
-    eventTypeCallbackRegistryMap(eventType) send (_ withoutCallbacksForPath path)
+    modifyCallbackRegistry(eventType, { _ withoutCallbacksForPath(path) })
     path
   }
 
@@ -165,7 +177,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
    * @return Path used for un-registering callbacks
    */
   def recursivelyRemoveCallbacksForPath(eventType: WatchEvent.Kind[Path], path: Path): Path = {
-    eventTypeCallbackRegistryMap(eventType) send (_ withoutCallbacksForPathRecursive path)
+    modifyCallbackRegistry(eventType, { _ withoutCallbacksForPathRecursive(path) })
     path
   }
 
@@ -180,8 +192,9 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
    * @return Option[Callbacks] for the path at the event type (Option[List[Path => Unit]])
    */
   def callbacksForPath(eventType: WatchEvent.Kind[Path], path: Path): Option[Callbacks] = {
-    val registryAgent = eventTypeCallbackRegistryMap(eventType)
-    Await.result(registryAgent.future, 10 seconds).callbacksForPath(path)
+    eventTypeCallbackRegistryMap.get(eventType) flatMap { registryAgent =>
+      Await.result(registryAgent.future, 10 seconds).callbacksForPath(path)
+    }
   }
 
   /**
