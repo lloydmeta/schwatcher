@@ -180,8 +180,8 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
    * @return Option[Callbacks] for the path at the event type (Option[List[Path => Unit]])
    */
   def callbacksForPath(eventType: WatchEvent.Kind[Path], path: Path): Option[Callbacks] = {
-    eventTypeCallbackRegistryMap.get(eventType) flatMap { registryAgent =>
-      Await.result(registryAgent.future, 10 seconds).callbacksForPath(path) }
+    val registryAgent = eventTypeCallbackRegistryMap(eventType)
+    Await.result(registryAgent.future, 10 seconds).callbacksForPath(path)
   }
 
   /**
