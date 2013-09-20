@@ -36,25 +36,23 @@ object MonitorActor {
 class MonitorActor(concurrency: Int = 5) extends Actor with Logging with RecursiveFileActions {
 
   // Smallest mailbox router for callback actors
-  val callbackActors = context.actorOf(
-    CallbackActor().withRouter(SmallestMailboxRouter(concurrency)),
-    "callbackActors")
+  private[this] val callbackActors = context.actorOf(
+    CallbackActor().withRouter(SmallestMailboxRouter(concurrency)), "callbackActors")
 
-  private val eventTypeCallbackRegistryMap = mutable.Map(
+  private[this] val eventTypeCallbackRegistryMap = mutable.Map(
     ENTRY_CREATE -> CallbackRegistry(ENTRY_CREATE),
     ENTRY_MODIFY -> CallbackRegistry(ENTRY_MODIFY),
-    ENTRY_DELETE -> CallbackRegistry(ENTRY_DELETE)
-  )
+    ENTRY_DELETE -> CallbackRegistry(ENTRY_DELETE))
 
-  val watchServiceTask = new WatchServiceTask(self)
-  val watchThread = new Thread(watchServiceTask, "WatchService")
+  private[this] val watchServiceTask = new WatchServiceTask(self)
+  private[this] val watchThread = new Thread(watchServiceTask, "WatchService")
 
-  override def preStart() {
+  override def preStart() = {
     watchThread.setDaemon(true)
     watchThread.start()
   }
 
-  override def postStop() {
+  override def postStop() = {
     watchThread.interrupt()
   }
 
@@ -95,8 +93,8 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
     * @param modify a function to update the CallbackRegistry
     * @return Unit
     */
-  def modifyCallbackRegistry(eventType: WatchEvent.Kind[Path]
-                            ,modify: CallbackRegistry => CallbackRegistry): Unit = {
+  private[this] def modifyCallbackRegistry(eventType: WatchEvent.Kind[Path]
+                                          ,modify: CallbackRegistry => CallbackRegistry): Unit = {
     eventTypeCallbackRegistryMap.get(eventType) foreach { registry =>
       eventTypeCallbackRegistryMap.update(eventType, modify(registry))
     }
@@ -113,7 +111,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
    * @param callback Callback function, Path => Init
    * @return Path used for registration
    */
-  def addPathCallback(eventType: WatchEvent.Kind[Path], path: Path, callback: Callback): Path = {
+  private[this] def addPathCallback(eventType: WatchEvent.Kind[Path], path: Path, callback: Callback): Path = {
     modifyCallbackRegistry(eventType, { _ withPathCallback(path, callback) })
     path
   }
@@ -130,7 +128,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
    * @param callback Callback function, Path => Init
    * @return Path used for registration
    */
-  def recursivelyAddPathCallback(eventType: WatchEvent.Kind[Path], path: Path, callback: Callback): Path = {
+  private[this] def recursivelyAddPathCallback(eventType: WatchEvent.Kind[Path], path: Path, callback: Callback): Path = {
     modifyCallbackRegistry(eventType, { _ withPathCallbackRecursive(path, callback) })
     path
   }
@@ -148,7 +146,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
    * @param path Path (Java type) to be registered
    * @return Path used for un-registering callbacks
    */
-  def removeCallbacksForPath(eventType: WatchEvent.Kind[Path], path: Path): Path = {
+  private[this] def removeCallbacksForPath(eventType: WatchEvent.Kind[Path], path: Path): Path = {
     modifyCallbackRegistry(eventType, { _ withoutCallbacksForPath(path) })
     path
   }
@@ -166,7 +164,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
    * @param path Path (Java type) to be registered
    * @return Path used for un-registering callbacks
    */
-  def recursivelyRemoveCallbacksForPath(eventType: WatchEvent.Kind[Path], path: Path): Path = {
+  private[this] def recursivelyRemoveCallbacksForPath(eventType: WatchEvent.Kind[Path], path: Path): Path = {
     modifyCallbackRegistry(eventType, { _ withoutCallbacksForPathRecursive(path) })
     path
   }
@@ -181,7 +179,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
    * @param path Path (Java type) to be registered
    * @return Option[Callbacks] for the path at the event type (Option[List[Path => Unit]])
    */
-  def callbacksForPath(eventType: WatchEvent.Kind[Path], path: Path): Option[Callbacks] = {
+  private[this] def callbacksForPath(eventType: WatchEvent.Kind[Path], path: Path): Option[Callbacks] = {
     eventTypeCallbackRegistryMap.get(eventType) flatMap { _ callbacksForPath(path) }
   }
 
@@ -191,7 +189,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
    * @param eventType WatchEvent.Kind[Path] Java7 Event type
    * @param path Path (Java type) to be registered
    */
-  def addPathToWatchServiceTask(eventType: WatchEvent.Kind[Path], path: Path) {
+  private[this] def addPathToWatchServiceTask(eventType: WatchEvent.Kind[Path], path: Path) {
     logger.debug("Adding path to WatchServiceTask")
     watchServiceTask.watch(path, eventType)
   }
@@ -202,12 +200,9 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
    * @param eventType WatchEvent.Kind[Path] Java7 Event type
    * @param path Path (Java type) to be registered
    */
-  def recursivelyAddPathToWatchServiceTask(eventType: WatchEvent.Kind[Path], path: Path) {
+  private[this] def recursivelyAddPathToWatchServiceTask(eventType: WatchEvent.Kind[Path], path: Path) {
     addPathToWatchServiceTask(eventType, path)
-    forEachDir(path) {
-      (directory, attributes) =>
-        addPathToWatchServiceTask(eventType, directory)
-    }
+    forEachDir(path) { (directory, _) => addPathToWatchServiceTask(eventType, directory) }
   }
 
   /**
