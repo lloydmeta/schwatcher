@@ -1,18 +1,14 @@
 package com.beachape.filemanagement
 
 import akka.actor.{Actor, Props}
-import akka.agent.Agent
 import akka.routing.SmallestMailboxRouter
-import akka.util.Timeout
 import com.beachape.filemanagement.Messages._
 import com.beachape.filemanagement.RegistryTypes._
 import com.typesafe.scalalogging.slf4j.Logging
 import java.nio.file.StandardWatchEventKinds._
 import java.nio.file._
-import scala.concurrent.Await
-import scala.concurrent.duration._
+import scala.collection.mutable
 import scala.language.existentials
-import scala.language.postfixOps
 
 /**
  * Companion object for creating Monitor actor instances
@@ -39,20 +35,15 @@ object MonitorActor {
  */
 class MonitorActor(concurrency: Int = 5) extends Actor with Logging with RecursiveFileActions {
 
-  implicit val timeout = Timeout(10 seconds)
-  implicit val system = context.system
-  implicit val ec = context.dispatcher
-
   // Smallest mailbox router for callback actors
   val callbackActors = context.actorOf(
     CallbackActor().withRouter(SmallestMailboxRouter(concurrency)),
     "callbackActors")
 
-  // Use Akka Agent to help keep things atomic and thread-safe
-  private val eventTypeCallbackRegistryMap = Map(
-    ENTRY_CREATE -> Agent(CallbackRegistry(ENTRY_CREATE)),
-    ENTRY_MODIFY -> Agent(CallbackRegistry(ENTRY_MODIFY)),
-    ENTRY_DELETE -> Agent(CallbackRegistry(ENTRY_DELETE))
+  private val eventTypeCallbackRegistryMap = mutable.Map(
+    ENTRY_CREATE -> CallbackRegistry(ENTRY_CREATE),
+    ENTRY_MODIFY -> CallbackRegistry(ENTRY_MODIFY),
+    ENTRY_DELETE -> CallbackRegistry(ENTRY_DELETE)
   )
 
   val watchServiceTask = new WatchServiceTask(self)
@@ -106,7 +97,9 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
     */
   def modifyCallbackRegistry(eventType: WatchEvent.Kind[Path]
                             ,modify: CallbackRegistry => CallbackRegistry): Unit = {
-    eventTypeCallbackRegistryMap.get(eventType) foreach { _ send modify }
+    eventTypeCallbackRegistryMap.get(eventType) foreach { registry =>
+      eventTypeCallbackRegistryMap.update(eventType, modify(registry))
+    }
   }
 
   /**
@@ -189,9 +182,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
    * @return Option[Callbacks] for the path at the event type (Option[List[Path => Unit]])
    */
   def callbacksForPath(eventType: WatchEvent.Kind[Path], path: Path): Option[Callbacks] = {
-    eventTypeCallbackRegistryMap.get(eventType) flatMap { registryAgent =>
-      Await.result(registryAgent.future, 10 seconds).callbacksForPath(path)
-    }
+    eventTypeCallbackRegistryMap.get(eventType) flatMap { _ callbacksForPath(path) }
   }
 
   /**
