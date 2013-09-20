@@ -72,11 +72,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
       // Ensure that only absolute paths are used
       val (event, path) = (message.event, message.path.toAbsolutePath)
       logger.info(s"Event $event at path: $path")
-      processCallbacksForEventPath(event.asInstanceOf[WatchEvent.Kind[Path]], path)()
-      // If event is ENTRY_DELETE or the path is a file, check for callbacks that need
-      // to be fired for the directory the file is in
-      if (event == ENTRY_DELETE || path.toFile.isFile)
-        processCallbacksForEventPath(event.asInstanceOf[WatchEvent.Kind[Path]], path.getParent)(path)
+      processCallbacksForEventPath(event.asInstanceOf[WatchEvent.Kind[Path]], path)
     }
     case message: RegisterCallback => {
       // Ensure that only absolute paths are used
@@ -231,13 +227,21 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
    * @param causerPath Path (Java type) to be sent to the callback, defaults to lookupPath
    * @return Unit
    */
-  def processCallbacksForEventPath(event: WatchEvent.Kind[Path], lookupPath: Path)(causerPath: Path = lookupPath) {
-    for {
-      callbacks <- callbacksForPath(event, lookupPath)
-      callback <- callbacks
-    } {
-      logger.debug(s"Sending callback for path: $causerPath")
-      callbackActors ! PerformCallback(causerPath, callback)
+  private[this] def processCallbacksForEventPath(event: WatchEvent.Kind[Path], path: Path) {
+
+    def processCallbacks(lookupPath: Path): Unit = {
+        for {
+          callbacks <- callbacksForPath(event, lookupPath)
+          callback  <- callbacks
+        } {
+          logger.debug(s"Sending callback for path: $path")
+          callbackActors ! PerformCallback(path, callback)
+        }
     }
+
+    processCallbacks(path)
+    // If event is ENTRY_DELETE or the path is a file, check for callbacks that
+    // need to be fired for the directory the file is in
+    if (event == ENTRY_DELETE || path.toFile.isFile) processCallbacks(path.getParent)
   }
 }
