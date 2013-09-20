@@ -68,31 +68,32 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
   }
 
   def receive = {
-    case message: EventAtPath => {
+    case EventAtPath(event, path) =>
       // Ensure that only absolute paths are used
-      val (event, path) = (message.event, message.path.toAbsolutePath)
+      val absolutePath = path.toAbsolutePath
       logger.info(s"Event $event at path: $path")
       processCallbacksForEventPath(event.asInstanceOf[WatchEvent.Kind[Path]], path)
-    }
-    case message: RegisterCallback => {
+
+    case RegisterCallback(event, recursive, path, callback) =>
       // Ensure that only absolute paths are used
-      val absolutePath = message.path.toAbsolutePath
-      if (message.recursive) {
-        recursivelyAddPathCallback(message.event, absolutePath, message.callback)
-        recursivelyAddPathToWatchServiceTask(message.event, absolutePath)
+      val absolutePath = path.toAbsolutePath
+      if (recursive) {
+        recursivelyAddPathCallback(event, absolutePath, callback)
+        recursivelyAddPathToWatchServiceTask(event, absolutePath)
       } else {
-        addPathCallback(message.event, absolutePath, message.callback)
-        addPathToWatchServiceTask(message.event, absolutePath)
+        addPathCallback(event, absolutePath, callback)
+        addPathToWatchServiceTask(event, absolutePath)
       }
-    }
-    case message: UnRegisterCallback => {
+
+    case UnRegisterCallback(event, recursive, path) =>
       // Ensure that only absolute paths are used
-      val absolutePath = message.path.toAbsolutePath
-      if (message.recursive)
-        recursivelyRemoveCallbacksForPath(message.event, absolutePath)
-      else
-        removeCallbacksForPath(message.event, absolutePath)
-    }
+      val absolutePath = path.toAbsolutePath
+      if (recursive) {
+        recursivelyRemoveCallbacksForPath(event, absolutePath)
+      } else {
+        removeCallbacksForPath(event, absolutePath)
+      }
+
     case _ => logger.error("Monitor Actor received an unexpected message :( !")
   }
 
