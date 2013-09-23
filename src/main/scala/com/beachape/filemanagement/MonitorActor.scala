@@ -217,13 +217,13 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
   private[this] def processCallbacksForEventPath(event: WatchEvent.Kind[Path], path: Path) {
 
     def processCallbacks(lookupPath: Path): Unit = {
-        for {
-          callbacks <- callbacksForPath(event, lookupPath)
-          callback  <- callbacks
-        } {
-          logger.debug(s"Sending callback for path: $path")
-          callbackActors ! PerformCallback(path, callback)
-        }
+      for {
+        callbacks <- callbacksForPath(event, lookupPath)
+        callback  <- callbacks
+      } {
+        logger.debug(s"Sending callback for path: $path")
+        callbackActors ! PerformCallback(path, callback)
+      }
     }
 
     processCallbacks(path)
