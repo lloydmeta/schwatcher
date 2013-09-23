@@ -1,16 +1,14 @@
 package com.beachape.filemanagement
 
-import java.nio.file.{Path, Files}
+import akka.actor.{ActorSystem, Actor}
+import akka.testkit.{TestActorRef, TestKit}
+import collection.JavaConversions._
+import java.io.{FileWriter, BufferedWriter}
 import java.nio.file.StandardWatchEventKinds._
+import java.nio.file.{Path, Files}
 import org.scalatest.BeforeAndAfter
 import org.scalatest.FunSpec
 import org.scalatest.matchers.ShouldMatchers
-import collection.JavaConversions._
-
-import akka.testkit.TestActorRef
-import akka.actor.{ActorSystem, Actor}
-import akka.testkit.TestKit
-import java.io.{FileWriter, BufferedWriter}
 
 class DummyActor extends Actor {
   def receive = {
