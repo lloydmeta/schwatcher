@@ -166,7 +166,7 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
         monitorActor.addPathCallback(ENTRY_CREATE, tempDirPath, addAndSend(6, _))
         monitorActor.addPathCallback(ENTRY_CREATE, tempDirLevel2Path, addAndSend(6, _))
         monitorActor.addPathCallback(ENTRY_CREATE, tempFileInTempDir, addAndSend(5, _))
-        monitorActor.processCallbacksForEventPath(ENTRY_CREATE, tempFileInTempDir)()
+        monitorActor.processCallbacksForEventPath(ENTRY_CREATE, tempFileInTempDir)
         expectMsg(5)
       }
 
@@ -174,7 +174,7 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
         monitorActor.addPathCallback(ENTRY_MODIFY, tempDirPath, addAndSend(6, _))
         monitorActor.addPathCallback(ENTRY_MODIFY, tempDirLevel2Path, addAndSend(6, _))
         monitorActor.addPathCallback(ENTRY_MODIFY, tempFileInTempDir, addAndSend(5, _))
-        monitorActor.processCallbacksForEventPath(ENTRY_MODIFY, tempDirPath)()
+        monitorActor.processCallbacksForEventPath(ENTRY_MODIFY, tempDirPath)
         expectMsg(6)
       }
 
@@ -182,7 +182,7 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
         monitorActor.addPathCallback(ENTRY_DELETE, tempDirPath, path => testActor ! path)
         monitorActor.addPathCallback(ENTRY_DELETE, tempDirLevel2Path, addAndSend(6, _))
         monitorActor.addPathCallback(ENTRY_DELETE, tempFileInTempDir, addAndSend(5, _))
-        monitorActor.processCallbacksForEventPath(ENTRY_DELETE, tempDirPath)(tempFileInTempDir)
+        monitorActor.processCallbacksForEventPath(ENTRY_DELETE, tempDirPath)
         expectMsg(tempFileInTempDir)
       }
 
@@ -279,7 +279,7 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
         expectMsg(TestResponse(s"path is $tempFileInTempDir"))
       }
 
-      it("should case callbacks to to fired for a registered directory path AND the file path itself") {
+      it("should cause callbacks to to fired for a registered directory path AND the file path itself") {
         val registerFileCallbackMessageDirectory = RegisterCallback(ENTRY_DELETE, recursive = false, tempDirPath,
           path => testActor ! TestResponse(s"directory callback path is $path"))
         val registerFileCallbackMessageFile = RegisterCallback(ENTRY_DELETE, recursive = false, tempFileInTempDir,
