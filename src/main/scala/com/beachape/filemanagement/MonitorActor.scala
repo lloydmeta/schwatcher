@@ -40,9 +40,9 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
     CallbackActor().withRouter(SmallestMailboxRouter(concurrency)), "callbackActors")
 
   private[this] val eventTypeCallbackRegistryMap = mutable.Map(
-    ENTRY_CREATE -> CallbackRegistry(ENTRY_CREATE),
-    ENTRY_MODIFY -> CallbackRegistry(ENTRY_MODIFY),
-    ENTRY_DELETE -> CallbackRegistry(ENTRY_DELETE))
+    ENTRY_CREATE -> CallbackRegistry(),
+    ENTRY_MODIFY -> CallbackRegistry(),
+    ENTRY_DELETE -> CallbackRegistry())
 
   private[this] val watchServiceTask = new WatchServiceTask(self)
   private[this] val watchThread = new Thread(watchServiceTask, "WatchService")
