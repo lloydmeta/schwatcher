@@ -16,19 +16,13 @@ class CallbackRegistrySpec extends FunSpec
   describe("companion factory object") {
 
     it("should create an instance of CallbackRegistry") {
-      CallbackRegistry(ENTRY_CREATE).isInstanceOf[CallbackRegistry] should be(true)
-    }
-
-    it("should create a CallbackRegistry with the same event type passed to the factory") {
-      CallbackRegistry(ENTRY_CREATE).eventType should be(ENTRY_CREATE)
-      CallbackRegistry(ENTRY_DELETE).eventType should be(ENTRY_DELETE)
-      CallbackRegistry(ENTRY_MODIFY).eventType should be(ENTRY_MODIFY)
+      CallbackRegistry().isInstanceOf[CallbackRegistry] should be(true)
     }
   }
 
   describe("#withPathCallback") {
 
-    val registry = CallbackRegistry(ENTRY_CREATE)
+    val registry = CallbackRegistry()
     val tmpDirPath = Paths get System.getProperty("java.io.tmpdir")
     val callback = { (path: Path) => println(path.toString) }
 
