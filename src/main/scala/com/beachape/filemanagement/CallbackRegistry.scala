@@ -54,7 +54,7 @@ class CallbackRegistry(pathToCallbacksMap: Map[Path, List[Callback]])
    */
   def withPathCallbackRecursive(path: Path, callback: Callback): CallbackRegistry = {
     var callbackRegistry = withPathCallback(path, callback)
-    forEachDir(path) { (containedDirPath, _) =>
+    forEachDir(path) { containedDirPath =>
       callbackRegistry = callbackRegistry.withPathCallback(containedDirPath, callback)
     }
     callbackRegistry
@@ -81,7 +81,7 @@ class CallbackRegistry(pathToCallbacksMap: Map[Path, List[Callback]])
    */
   def withoutCallbacksForPathRecursive(path: Path): CallbackRegistry = {
     var callbackRegistry = withoutCallbacksForPath(path)
-    forEachDir(path) { (containedDirPath, _) =>
+    forEachDir(path) { containedDirPath =>
       callbackRegistry = callbackRegistry.withoutCallbacksForPath(containedDirPath)
     }
     callbackRegistry

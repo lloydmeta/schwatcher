@@ -202,7 +202,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
    */
   private[this] def recursivelyAddPathToWatchServiceTask(eventType: WatchEvent.Kind[Path], path: Path) {
     addPathToWatchServiceTask(eventType, path)
-    forEachDir(path) { (directory, _) => addPathToWatchServiceTask(eventType, directory) }
+    forEachDir(path) { addPathToWatchServiceTask(eventType, _) }
   }
 
   /**
