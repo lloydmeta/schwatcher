@@ -1,7 +1,7 @@
 package com.beachape.filemanagement
 
 import com.beachape.filemanagement.RegistryTypes._
-import java.nio.file.{WatchEvent, Path}
+import java.nio.file.Path
 
 /**
  * Factory object for creating a CallbackRegistry
