@@ -29,60 +29,40 @@ class CallbackRegistry(pathToCallbacksMap: Map[Path, List[Callback]])
 
   /**
    * Returns a new instance of CallbackRegistry with the callback registered for the
-   * given path
+   * given path. If specified, the callback will be registered recursively for
+   * each subdirectory of the given path.
    *
    * Some call this a monadic method
    *
-   * @param path Path (Java type) to be registered
+   * @param path Path (Java type) to be registered for callbacks
    * @param callback Callback function that takes a Path as a parameter and has Unit return type
+   * @param recursive Boolean register the callback for each subdirectory
    * @return a new CallbackRegistry
    */
-  def withPathCallback(path: Path, callback: Callback): CallbackRegistry = {
-    val totalCallbacksForPath = callback :: pathToCallbacksMap.getOrElse(path, Nil)
-    CallbackRegistry(pathToCallbacksMap + (path -> totalCallbacksForPath))
-  }
-
-  /**
-   * Returns a new instance of CallbackRegistry with the callback registered for the
-   * given path, but does it recursively
-   *
-   * Some call this a monadic method
-   *
-   * @param path Path (Java type) to be registered for callbacks recursively
-   * @param callback Callback function that takes a Path as a parameter and has Unit return type
-   * @return a new CallbackRegistry
-   */
-  def withPathCallbackRecursive(path: Path, callback: Callback): CallbackRegistry = {
-    var callbackRegistry = withPathCallback(path, callback)
-    forEachDir(path) { containedDirPath =>
-      callbackRegistry = callbackRegistry.withPathCallback(containedDirPath, callback)
+  def withCallbackFor(path: Path, callback: Callback, recursive: Boolean = false): CallbackRegistry = {
+    val callbacks = callback :: pathToCallbacksMap.getOrElse(path, Nil)
+    var callbackRegistry = CallbackRegistry(pathToCallbacksMap + (path -> callbacks))
+    if (recursive) forEachDir(path) { subDir =>
+      callbackRegistry = callbackRegistry.withCallbackFor(subDir, callback)
     }
     callbackRegistry
   }
 
   /**
-   * Returns a new instance of CallbackRegistry without callbacks for the specified path
+   * Returns a new instance of CallbackRegistry without callbacks for the given
+   * path. If specified, callbacks will be unregistered recursively for each
+   * subdirectory of the given path.
    *
    * Some call this a monadic method
    *
    * @param path Path (Java type) to be unregistered
+   * @param recursive Boolean unregister callbacks for each subdirectory
    * @return a new CallbackRegistry
    */
-  def withoutCallbacksForPath(path: Path) = CallbackRegistry(pathToCallbacksMap - path)
-
-  /**
-   * Returns a new instance of CallbackRegistry without callbacks for the specified path, but
-   * recursively so that all folders under this folder are also unregistered for callbacks
-   *
-   * Some call this a monadic method
-   *
-   * @param path Path (Java type) to be unregistered recursively
-   * @return a new CallbackRegistry
-   */
-  def withoutCallbacksForPathRecursive(path: Path): CallbackRegistry = {
-    var callbackRegistry = withoutCallbacksForPath(path)
-    forEachDir(path) { containedDirPath =>
-      callbackRegistry = callbackRegistry.withoutCallbacksForPath(containedDirPath)
+  def withoutCallbacksFor(path: Path, recursive: Boolean = false): CallbackRegistry = {
+    var callbackRegistry = CallbackRegistry(pathToCallbacksMap - path)
+    if (recursive) forEachDir(path) { subDir =>
+      callbackRegistry = callbackRegistry.withoutCallbacksFor(subDir)
     }
     callbackRegistry
   }
@@ -93,5 +73,5 @@ class CallbackRegistry(pathToCallbacksMap: Map[Path, List[Callback]])
    * @param path Path (Java type) to use for checking for callbacks
    * @return Some[Callbacks], which is essentially List[Callback]
    */
-  def callbacksForPath(path: Path): Option[Callbacks] = pathToCallbacksMap.get(path)
+  def callbacksFor(path: Path): Option[Callbacks] = pathToCallbacksMap.get(path)
 }

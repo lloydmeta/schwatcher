@@ -8,6 +8,7 @@ import java.nio.file.Path
 import java.nio.file.StandardWatchEventKinds._
 import org.scalatest.BeforeAndAfter
 import org.scalatest.FunSpec
+import org.scalatest.PrivateMethodTester
 import org.scalatest.matchers.ShouldMatchers
 import com.beachape.filemanagement.Messages.RegisterCallback
 import scala.Some
@@ -16,7 +17,8 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
   with FunSpec
   with ShouldMatchers
   with BeforeAndAfter
-  with ImplicitSender {
+  with ImplicitSender
+  with PrivateMethodTester {
 
   val tempFile = java.io.File.createTempFile("fakeFile", ".log")
   tempFile.deleteOnExit()
@@ -24,8 +26,11 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
 
   var monitorActorRef = TestActorRef(new MonitorActor)
   var monitorActor = monitorActorRef.underlyingActor
-
   var counter = 0
+
+  val addPathCallback = PrivateMethod[Path]('addPathCallback)
+  val recursivelyAddPathCallback = PrivateMethod[Path]('recursivelyAddPathCallback)
+  val removeCallbacksForPath = PrivateMethod[Path]('removeCallbacksForPath)
 
   after {
     // Create a new actor for each test

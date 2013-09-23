@@ -61,27 +61,17 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
       // Ensure that only absolute paths are used
       val absolutePath = path.toAbsolutePath
       logger.info(s"Event $event at path: $path")
-      processCallbacksForEventPath(event.asInstanceOf[WatchEvent.Kind[Path]], path)
+      processCallbacksFor(event.asInstanceOf[WatchEvent.Kind[Path]], absolutePath)
 
     case RegisterCallback(event, recursive, path, callback) =>
       // Ensure that only absolute paths are used
       val absolutePath = path.toAbsolutePath
-      if (recursive) {
-        recursivelyAddPathCallback(event, absolutePath, callback)
-        recursivelyAddPathToWatchServiceTask(event, absolutePath)
-      } else {
-        addPathCallback(event, absolutePath, callback)
-        addPathToWatchServiceTask(event, absolutePath)
-      }
+      addCallbackFor(event, absolutePath, callback, recursive)
 
     case UnRegisterCallback(event, recursive, path) =>
       // Ensure that only absolute paths are used
       val absolutePath = path.toAbsolutePath
-      if (recursive) {
-        recursivelyRemoveCallbacksForPath(event, absolutePath)
-      } else {
-        removeCallbacksForPath(event, absolutePath)
-      }
+      removeCallbacksFor(event, absolutePath, recursive)
 
     case _ => logger.error("Monitor Actor received an unexpected message :( !")
   }
@@ -101,7 +91,9 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
   }
 
   /**
-   * Registers a callback for a path for an Event type
+   * Registers a callback for a path for an Event type. If specified, the
+   * callback will be registered recursively for each subdirectory of the given
+   * path.
    *
    * If the path does not exist at the time of adding, a log message is created and the
    * path is ignored
@@ -109,27 +101,11 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
    * @param eventType WatchEvent.Kind[Path] Java7 Event type
    * @param path Path (Java type) to be registered
    * @param callback Callback function, Path => Init
+   * @param recursive Boolean add the callback for each subdirectory of the given path
    * @return Path used for registration
    */
-  private[this] def addPathCallback(eventType: WatchEvent.Kind[Path], path: Path, callback: Callback): Path = {
-    modifyCallbackRegistry(eventType, { _ withPathCallback(path, callback) })
-    path
-  }
-
-  /**
-   * Recursively registers a callback for a path for an Event type.
-   * Only recursively registers callbacks for paths that are directories including the current path.
-   *
-   * If the path is not that of a directory, register the callback only for the path itself
-   * then move on. Only recursively registers callbacks for paths that are directories including the current path.
-   *
-   * @param eventType WatchEvent.Kind[Path] Java7 Event type
-   * @param path Path (Java type) to be registered
-   * @param callback Callback function, Path => Init
-   * @return Path used for registration
-   */
-  private[this] def recursivelyAddPathCallback(eventType: WatchEvent.Kind[Path], path: Path, callback: Callback): Path = {
-    modifyCallbackRegistry(eventType, { _ withPathCallbackRecursive(path, callback) })
+  private[this] def addCallbackFor(eventType: WatchEvent.Kind[Path], path: Path, callback: Callback, recursive: Boolean = false): Path = {
+    modifyCallbackRegistry(eventType, { _ withCallbackFor(path, callback, recursive) })
     path
   }
 
@@ -144,65 +120,40 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
    *
    * @param eventType WatchEvent.Kind[Path] Java7 Event type
    * @param path Path (Java type) to be registered
+   * @param recursive Boolean remove the callback for each subdirectory of the given path
    * @return Path used for un-registering callbacks
    */
-  private[this] def removeCallbacksForPath(eventType: WatchEvent.Kind[Path], path: Path): Path = {
-    modifyCallbackRegistry(eventType, { _ withoutCallbacksForPath(path) })
-    path
-  }
-
-  /**
-   * Recursively removes the callbacks for a specific path, does not care if Path had no callbacks in the
-   * first place. Only recursively un-registers callbacks for paths that are directories under the current path.
-   *
-   * Note that this does not remove the event listeners from the Java API,
-   * because such functionality does not exist. All this does is make sure that the callbacks
-   * registered to a specific path do not get fired. Depending on your use case,
-   * it may make more sense to just kill the monitor actor to start fresh.
-   *
-   * @param eventType WatchEvent.Kind[Path] Java7 Event type
-   * @param path Path (Java type) to be registered
-   * @return Path used for un-registering callbacks
-   */
-  private[this] def recursivelyRemoveCallbacksForPath(eventType: WatchEvent.Kind[Path], path: Path): Path = {
-    modifyCallbackRegistry(eventType, { _ withoutCallbacksForPathRecursive(path) })
+  private[this] def removeCallbacksFor(eventType: WatchEvent.Kind[Path], path: Path, recursive: Boolean = false): Path = {
+    modifyCallbackRegistry(eventType, { _ withoutCallbacksFor(path, recursive) })
     path
   }
 
   /**
    * Retrieves the callbacks registered for a path for an Event type
    *
-   * Note that #await is called on the agent so that the thread blocks until all changes
-   * have been made on the agent.
-   *
    * @param eventType WatchEvent.Kind[Path] Java7 Event type
    * @param path Path (Java type) to be registered
    * @return Option[Callbacks] for the path at the event type (Option[List[Path => Unit]])
    */
-  private[this] def callbacksForPath(eventType: WatchEvent.Kind[Path], path: Path): Option[Callbacks] = {
-    eventTypeCallbackRegistryMap.get(eventType) flatMap { _ callbacksForPath(path) }
+  private[this] def callbacksFor(eventType: WatchEvent.Kind[Path], path: Path): Option[Callbacks] = {
+    eventTypeCallbackRegistryMap.get(eventType) flatMap { _ callbacksFor(path) }
   }
 
   /**
-   * Adds a path to be monitored by the Watch Service Task
+   * Adds a path to be monitored by the WatchServiceTask. If specified, all
+   * subdirectories will be recursively added to the WatchServiceTask.
    *
    * @param eventType WatchEvent.Kind[Path] Java7 Event type
+   * @param recursive Boolean watch subdirectories of the given path
    * @param path Path (Java type) to be registered
    */
-  private[this] def addPathToWatchServiceTask(eventType: WatchEvent.Kind[Path], path: Path) {
-    logger.debug("Adding path to WatchServiceTask")
+  private[this] def addPathToWatchServiceTask(eventType: WatchEvent.Kind[Path], path: Path, recursive: Boolean = false) {
+    logger.debug(s"Adding $path to WatchServiceTask")
     watchServiceTask.watch(path, eventType)
-  }
-
-  /**
-   * Recursively adds a path to be monitored by the Watch Service Task
-   *
-   * @param eventType WatchEvent.Kind[Path] Java7 Event type
-   * @param path Path (Java type) to be registered
-   */
-  private[this] def recursivelyAddPathToWatchServiceTask(eventType: WatchEvent.Kind[Path], path: Path) {
-    addPathToWatchServiceTask(eventType, path)
-    forEachDir(path) { addPathToWatchServiceTask(eventType, _) }
+    if (recursive) forEachDir(path) { subDir =>
+      logger.debug(s"Adding $subDir to WatchServiceTask")
+      watchServiceTask.watch(subDir, eventType)
+    }
   }
 
   /**
@@ -214,11 +165,11 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
    * @param causerPath Path (Java type) to be sent to the callback, defaults to lookupPath
    * @return Unit
    */
-  private[this] def processCallbacksForEventPath(event: WatchEvent.Kind[Path], path: Path) {
+  private[this] def processCallbacksFor(event: WatchEvent.Kind[Path], path: Path) {
 
     def processCallbacks(lookupPath: Path): Unit = {
       for {
-        callbacks <- callbacksForPath(event, lookupPath)
+        callbacks <- callbacksFor(event, lookupPath)
         callback  <- callbacks
       } {
         logger.debug(s"Sending callback for path: $path")
