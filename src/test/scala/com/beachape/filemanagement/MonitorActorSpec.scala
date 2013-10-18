@@ -13,11 +13,11 @@ import org.scalatest.matchers.ShouldMatchers
 import scala.concurrent.duration._
 
 class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
-  with FunSpec
-  with ShouldMatchers
-  with BeforeAndAfter
-  with ImplicitSender
-  with PrivateMethodTester {
+with FunSpec
+with ShouldMatchers
+with BeforeAndAfter
+with ImplicitSender
+with PrivateMethodTester {
 
   trait Fixtures {
     // Actor
@@ -38,19 +38,23 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
     tempDirLevel2Path.toFile.deleteOnExit()
     tempFileInTempDir.toFile.deleteOnExit()
 
-    val dummyFunction: Path => Unit = { (path: Path) =>  val bleh = "lala"}
+    val dummyFunction: Path => Unit = {
+      (path: Path) => val bleh = "lala"
+    }
     val modifyCallbackRegistry = PrivateMethod[Unit]('modifyCallbackRegistry)
 
     // Test helper methods
     def addCallbackFor(event: WatchEvent.Kind[Path], path: Path, callback: Callback, recursive: Boolean = false): Unit = {
-      monitorActor invokePrivate modifyCallbackRegistry(event, { registry: CallbackRegistry =>
-        registry.withCallbackFor(path, callback, recursive)
+      monitorActor invokePrivate modifyCallbackRegistry(event, {
+        registry: CallbackRegistry =>
+          registry.withCallbackFor(path, callback, recursive)
       })
     }
 
     def removeCallbacksFor(event: WatchEvent.Kind[Path], path: Path, recursive: Boolean = false): Unit = {
-      monitorActor invokePrivate modifyCallbackRegistry(event, { registry: CallbackRegistry =>
-        registry.withoutCallbacksFor(path, recursive)
+      monitorActor invokePrivate modifyCallbackRegistry(event, {
+        registry: CallbackRegistry =>
+          registry.withoutCallbacksFor(path, recursive)
       })
     }
   }
@@ -74,8 +78,9 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
         new Fixtures {
           addCallbackFor(ENTRY_CREATE, tempFile.toPath, dummyFunction)
           monitorActor.callbacksFor(ENTRY_CREATE, tempFile.toPath).isEmpty should be(false)
-          monitorActor.callbacksFor(ENTRY_CREATE, tempFile.toPath) foreach { callbacks =>
-            callbacks should contain(dummyFunction)
+          monitorActor.callbacksFor(ENTRY_CREATE, tempFile.toPath) foreach {
+            callbacks =>
+              callbacks should contain(dummyFunction)
           }
         }
       }
@@ -95,9 +100,9 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
         new Fixtures {
           addCallbackFor(ENTRY_CREATE, tempDirPath, dummyFunction, true)
           monitorActor.callbacksFor(ENTRY_CREATE, tempDirLevel1Path).map(callbacks =>
-            callbacks should contain (dummyFunction))
+            callbacks should contain(dummyFunction))
           monitorActor.callbacksFor(ENTRY_CREATE, tempDirLevel2Path).map(callbacks =>
-            callbacks should contain (dummyFunction))
+            callbacks should contain(dummyFunction))
         }
       }
 
@@ -105,7 +110,7 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
         new Fixtures {
           addCallbackFor(ENTRY_CREATE, tempFileInTempDir, dummyFunction, true)
           monitorActor.callbacksFor(ENTRY_CREATE, tempFileInTempDir).map(callbacks =>
-            callbacks should contain (dummyFunction))
+            callbacks should contain(dummyFunction))
         }
       }
 
@@ -122,7 +127,6 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
     }
 
     describe("recursively removing callbacks") {
-
 
 
       it("should remove callbacks for all folders that exist under the path given") {
@@ -149,8 +153,10 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
       it("should return Some[Callbacks] that contains prior registered callbacks for a path") {
         new Fixtures {
           addCallbackFor(ENTRY_CREATE, tempFile.toPath, dummyFunction)
-          monitorActor.callbacksFor(ENTRY_CREATE, tempFile.toPath) foreach { callbacks =>
-            callbacks should contain (dummyFunction) }
+          monitorActor.callbacksFor(ENTRY_CREATE, tempFile.toPath) foreach {
+            callbacks =>
+              callbacks should contain(dummyFunction)
+          }
         }
       }
 
@@ -166,7 +172,9 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
 
     describe("#processCallbacksFor") {
 
-      val callback = { path: Path => testActor ! path }
+      val callback = {
+        path: Path => testActor ! path
+      }
 
       it("should get the proper callback for a file path") {
         new Fixtures {
@@ -199,7 +207,9 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
 
       describe("RegisterCallback message type") {
 
-        val callbackFunc = { (path: Path) => val receivedPath = path }
+        val callbackFunc = {
+          (path: Path) => val receivedPath = path
+        }
 
         it("should register a callback when given a file path") {
           new Fixtures {
@@ -243,7 +253,9 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
 
       describe("UnRegisterCallback message type") {
 
-        val callbackFunc = { (path: Path) => val receivedPath = path }
+        val callbackFunc = {
+          (path: Path) => val receivedPath = path
+        }
 
         it("should un-register a callback when given a file path") {
           new Fixtures {
@@ -285,7 +297,9 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
       describe("EventAtPath message type") {
 
         sealed case class TestResponse(message: String)
-        val callbackFunc = { (path: Path) => testActor ! TestResponse(s"path is $path") }
+        val callbackFunc = {
+          (path: Path) => testActor ! TestResponse(s"path is $path")
+        }
 
         it("should cause callback to be fired for a registered file path") {
           new Fixtures {
