@@ -10,7 +10,6 @@ import org.scalatest.BeforeAndAfter
 import org.scalatest.FunSpec
 import org.scalatest.PrivateMethodTester
 import org.scalatest.matchers.ShouldMatchers
-import scala.concurrent.duration._
 
 class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
 with FunSpec
