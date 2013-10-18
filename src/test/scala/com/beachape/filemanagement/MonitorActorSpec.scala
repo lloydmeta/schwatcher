@@ -20,29 +20,32 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
   with PrivateMethodTester {
 
   trait Fixtures {
-    val tempFile = java.io.File.createTempFile("fakeFile", ".log")
-    tempFile.deleteOnExit()
-    val dummyFunction: Path => Unit = { (path: Path) =>  val bleh = "lala"}
+    // Actor
     val monitorActorRef = TestActorRef(new MonitorActor)
     val monitorActor = monitorActorRef.underlyingActor
 
+    // Files
     val tempDirPath = Files.createTempDirectory("root")
     val tempDirLevel1Path = Files.createTempDirectory(tempDirPath, "level1")
     val tempDirLevel2Path = Files.createTempDirectory(tempDirLevel1Path, "level2")
     val tempFileInTempDir = Files.createTempFile(tempDirPath, "hello", ".there")
 
+    // Make sure the files get deleted on exit
+    val tempFile = java.io.File.createTempFile("fakeFile", ".log")
+    tempFile.deleteOnExit()
     tempDirPath.toFile.deleteOnExit()
     tempDirLevel1Path.toFile.deleteOnExit()
     tempDirLevel2Path.toFile.deleteOnExit()
     tempFileInTempDir.toFile.deleteOnExit()
 
+    val dummyFunction: Path => Unit = { (path: Path) =>  val bleh = "lala"}
     val modifyCallbackRegistry = PrivateMethod[Unit]('modifyCallbackRegistry)
 
+    // Test helper methods
     def addCallbackFor(event: WatchEvent.Kind[Path], path: Path, callback: Callback, recursive: Boolean = false): Unit = {
       monitorActor invokePrivate modifyCallbackRegistry(event, { registry: CallbackRegistry =>
         registry.withCallbackFor(path, callback, recursive)
       })
-      // monitorActorRef ! RegisterCallback(event, recursive = recursive, path, callback)
     }
 
     def removeCallbacksFor(event: WatchEvent.Kind[Path], path: Path, recursive: Boolean = false): Unit = {
