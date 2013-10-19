@@ -8,9 +8,7 @@ class RecursiveFileActionsSpec extends FunSpec
   with ShouldMatchers
   with BeforeAndAfter {
 
-  class DummyClass extends RecursiveFileActions
-
-  val dummy = new DummyClass
+  val dummy = new RecursiveFileActions{}
 
   val tempDirPath = Files.createTempDirectory("root")
   val tempDirLevel1Path = Files.createTempDirectory(tempDirPath, "level1")
@@ -25,17 +23,13 @@ class RecursiveFileActionsSpec extends FunSpec
 
     it("should ignore paths for files") {
       var called = false
-      dummy.forEachDir(tempFileInTempDir){(path, attr) =>
-        called = true
-      }
+      dummy.forEachDir(tempFileInTempDir){ _ => called = true }
       called should be(false)
     }
 
     it("should call the block once for every existing directory inside a directory path") {
       var counter = 0
-      dummy.forEachDir(tempDirPath){(path, attr) =>
-        counter += 1
-      }
+      dummy.forEachDir(tempDirPath){ _ => counter += 1 }
       counter should be(3)
     }
   }

@@ -26,18 +26,8 @@ object CallbackActor {
  * Should be created via companion method's props
  */
 class CallbackActor extends Actor with Logging {
-
   def receive = {
-    case message: PerformCallback => performCallback(message)
+    case PerformCallback(path, callback) => callback(path)
     case _ => logger.error("Unknown message received")
-  }
-
-  /**
-   * Apply's the callback inside a PeformCallback method inside
-   * a PerformCallback message, passing in the message's path
-   * @param message PerformCallback message containing Path and Callback
-   */
-  def performCallback(message: PerformCallback) {
-    message.callback(message.path)
   }
 }

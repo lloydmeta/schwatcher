@@ -1,9 +1,9 @@
 package com.beachape.filemanagement
 
+import com.beachape.filemanagement.RegistryTypes._
 import com.typesafe.scalalogging.slf4j.Logging
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.{FileVisitResult, SimpleFileVisitor, Files, Path}
-import scala.reflect.io.File
 
 /**
  * Trait for allowing a block of code to be run recursively given a directory path
@@ -17,18 +17,17 @@ trait RecursiveFileActions extends Logging {
    * a directory tree
    *
    * @param path Path object to a directory
-   * @param doBlock a function that takes Path and BasicFileAttributes as parameters and returns Unit
+   * @param callback Callback to perform on each subdirectory path
    * @return Unit
    */
-  def forEachDir(path: Path)(doBlock: (Path, BasicFileAttributes) => Unit) {
-    if (File(path.toString).isDirectory)
+  def forEachDir(path: Path)(callback: Callback) = {
+    if (path.toFile.isDirectory)
       Files.walkFileTree(path, new SimpleFileVisitor[Path] {
         override def preVisitDirectory(dir: Path, attributes: BasicFileAttributes) = {
-          doBlock(dir, attributes)
+          callback(dir)
           FileVisitResult.CONTINUE
         }
       })
-    else
-      logger.debug(s"Path '$path' is not a directory, skipping recursive action")
+    else logger.debug(s"Path '$path' is not a directory, skipping recursive action")
   }
 }

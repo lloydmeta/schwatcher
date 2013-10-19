@@ -1,13 +1,14 @@
 package com.beachape.filemanagement
 
-import akka.actor.ActorSystem
-import akka.testkit.{ImplicitSender, TestActorRef, TestKit}
+import akka.actor._
+import akka.testkit.{ImplicitSender, TestKit}
+import com.beachape.filemanagement.Messages.PerformCallback
 import com.beachape.filemanagement.RegistryTypes._
 import java.nio.file.Paths
 import org.scalatest.BeforeAndAfter
 import org.scalatest.FunSpec
 import org.scalatest.matchers.ShouldMatchers
-import com.beachape.filemanagement.Messages.PerformCallback
+import scala.concurrent.duration._
 
 class CallbackActorSpec extends TestKit(ActorSystem("testSystem"))
   with FunSpec
@@ -15,8 +16,7 @@ class CallbackActorSpec extends TestKit(ActorSystem("testSystem"))
   with BeforeAndAfter
   with ImplicitSender {
 
-  val callbackActorRef = TestActorRef(new CallbackActor)
-  val callbackActor = callbackActorRef.underlyingActor
+  val callbackActor = system.actorOf(CallbackActor())
   val tmpDirPath = Paths get System.getProperty("java.io.tmpdir")
 
   var counter = 0
@@ -25,18 +25,18 @@ class CallbackActorSpec extends TestKit(ActorSystem("testSystem"))
     counter = 0
   }
 
-  describe("#performCallback") {
+  describe("#receive") {
 
     val dummyFunction: Callback = { path => counter += 1}
     val dummySendFunction: Callback = { path => testActor ! "Up yours!" }
 
     it("should take a PerformCallback object and perform the callback") {
-      callbackActor.performCallback(PerformCallback(tmpDirPath, dummyFunction))
-      counter should be(1)
+      callbackActor ! PerformCallback(tmpDirPath, dummyFunction)
+      within(1 second) { counter should be(1) }
     }
 
     it("should work with callbacks that send messages") {
-      callbackActor.performCallback(PerformCallback(tmpDirPath, dummySendFunction))
+      callbackActor ! PerformCallback(tmpDirPath, dummySendFunction)
       expectMsg("Up yours!")
     }
 
