@@ -42,7 +42,8 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
     ENTRY_MODIFY -> CallbackRegistry(),
     ENTRY_DELETE -> CallbackRegistry())
 
-  private[this] val watchServiceTask = new WatchServiceTask(self)
+  private[this] val monitorActor = self
+  private[this] val watchServiceTask = new WatchServiceTask(monitorActor)
   private[this] val watchThread = new Thread(watchServiceTask, "WatchService")
 
   override def preStart() = {
