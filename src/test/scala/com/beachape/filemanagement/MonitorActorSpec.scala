@@ -10,6 +10,8 @@ import org.scalatest.BeforeAndAfter
 import org.scalatest.FunSpec
 import org.scalatest.PrivateMethodTester
 import org.scalatest.matchers.ShouldMatchers
+import java.io.{FileWriter, BufferedWriter}
+import scala.concurrent.duration._
 
 class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
 with FunSpec
@@ -24,13 +26,13 @@ with PrivateMethodTester {
     val monitorActor = monitorActorRef.underlyingActor
 
     // Files
+    val tempFile = java.io.File.createTempFile("fakeFile", ".log")
     val tempDirPath = Files.createTempDirectory("root")
     val tempDirLevel1Path = Files.createTempDirectory(tempDirPath, "level1")
     val tempDirLevel2Path = Files.createTempDirectory(tempDirLevel1Path, "level2")
     val tempFileInTempDir = Files.createTempFile(tempDirPath, "hello", ".there")
 
     // Make sure the files get deleted on exit
-    val tempFile = java.io.File.createTempFile("fakeFile", ".log")
     tempFile.deleteOnExit()
     tempDirPath.toFile.deleteOnExit()
     tempDirLevel1Path.toFile.deleteOnExit()
@@ -335,6 +337,27 @@ with PrivateMethodTester {
 
       }
 
+    }
+
+  }
+
+  describe("integration testing") {
+
+    it("should fire the appropriate callback if a monitored file has been modified") {
+      new Fixtures {
+        val register = RegisterCallback(ENTRY_MODIFY, recursive = false, tempFile.toPath,
+          path => testActor ! s"Modified file is at $path")
+        monitorActorRef ! register
+        // Sleep to make sure that the Java WatchService is monitoring the file ...
+        Thread.sleep(3000)
+        val writer = new BufferedWriter(new FileWriter(tempFile))
+        writer.write("There's text in here wee!!")
+        writer.close
+        // Within 60 seconds is used in case the Java WatchService is acting slow ...
+        within(60 seconds) {
+          expectMsg(s"Modified file is at ${tempFile.toPath}")
+        }
+      }
     }
 
   }

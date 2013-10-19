@@ -57,7 +57,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
 
   def receive = {
     case EventAtPath(event, path) =>
-      logger.info(s"Event $event at path: $path")
+      logger.debug(s"Event $event at path: $path")
       // Ensure that only absolute paths are used
       val absolutePath = path.toAbsolutePath
       processCallbacksFor(event.asInstanceOf[WatchEvent.Kind[Path]], absolutePath)
@@ -66,6 +66,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
       // Ensure that only absolute paths are used
       val absolutePath = path.toAbsolutePath
       modifyCallbackRegistry(event, _ withCallbackFor(absolutePath, callback, recursive))
+      addPathToWatchServiceTask(event, absolutePath, recursive)
 
     case UnRegisterCallback(event, recursive, path) =>
       // Ensure that only absolute paths are used
