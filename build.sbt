@@ -1,10 +1,10 @@
 name := "schwatcher"
 
-version := "0.0.3"
+version := "0.0.4-SNAPSHOT"
 
-scalaVersion := "2.10.2"
+scalaVersion := "2.10.3"
 
-crossScalaVersions := Seq("2.10.0", "2.10.1", "2.10.2")
+crossScalaVersions := Seq("2.10.0", "2.10.1", "2.10.2", "2.10.3")
 
 crossVersion := CrossVersion.binary
 
