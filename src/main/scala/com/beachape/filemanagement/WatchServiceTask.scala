@@ -69,7 +69,7 @@ class WatchServiceTask(notifyActor: ActorRef) extends Runnable with Logging {
    *
    * @param path Path (Java7) path
    * @param eventType WatchEvent.Kind[Path], one of ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE
-   * @return WatchKey a Java7 WatchService WatchKey
+   * @return Option[WatchKey] a Java7 WatchService WatchKey
    */
   def watch(path: Path, eventType: WatchEvent.Kind[Path]): Option[WatchKey] = {
     val fileAtPath = path.toFile
