@@ -1,7 +1,7 @@
 package com.beachape.filemanagement
 
 import akka.actor.{Actor, Props}
-import akka.routing.SmallestMailboxRouter
+import akka.routing.{SmallestMailboxRouter, DefaultResizer}
 import com.beachape.filemanagement.Messages._
 import com.beachape.filemanagement.RegistryTypes.Callbacks
 import com.typesafe.scalalogging.slf4j.Logging
@@ -35,7 +35,10 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
 
   // Smallest mailbox router for callback actors
   private[this] val callbackActors = context.actorOf(
-    CallbackActor().withRouter(SmallestMailboxRouter(concurrency)), "callbackActors")
+    CallbackActor().withRouter(
+      SmallestMailboxRouter(
+        resizer = Some(DefaultResizer(lowerBound = concurrency, upperBound = concurrency + 1)))),
+      "callbackActors")
 
   private[this] val eventTypeCallbackRegistryMap = mutable.Map(
     ENTRY_CREATE -> CallbackRegistry(),
