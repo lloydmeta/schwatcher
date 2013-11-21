@@ -69,6 +69,17 @@ with PrivateMethodTester {
       thrown.getMessage should be("requirement failed: Callback concurrency requested is 0 but it should at least be 1")
     }
 
+    it("should not throw an error when concurrency parameter is set to 1") {
+      TestActorRef(MonitorActor(1))
+      true should be(true)
+    }
+
+
+    it("should not throw an error when concurrency parameter is set to > 1") {
+      TestActorRef(MonitorActor(2))
+      true should be(true)
+    }
+
   }
 
   describe("methods testing") {
