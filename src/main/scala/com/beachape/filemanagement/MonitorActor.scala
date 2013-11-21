@@ -20,7 +20,7 @@ object MonitorActor {
    * @return Props for instantiating a MonitorActor
    */
   def apply(concurrency: Int = 5) = {
-    require(concurrency > 1, s"Callback concurrency requested is $concurrency but it should at least be 1")
+    require(concurrency >= 1, s"Callback concurrency requested is $concurrency but it should at least be 1")
     Props(classOf[MonitorActor], concurrency)
   }
 }
