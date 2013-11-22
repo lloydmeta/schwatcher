@@ -3,17 +3,9 @@ package com.beachape.filemanagement
 import akka.actor.ActorRef
 import collection.JavaConversions._
 import com.beachape.filemanagement.Messages.EventAtPath
-import com.typesafe.scalalogging.slf4j.Logging
 import java.nio.file.StandardWatchEventKinds._
 import java.nio.file.{WatchKey, WatchEvent, Path, FileSystems}
 
-
-/**
- * Companion object for factory method
- */
-object WatchServiceTask {
-  def apply(notifyActor: ActorRef) = new WatchServiceTask(notifyActor)
-}
 
 /**
  * WatchService class that implements a Run method for passing into
@@ -24,7 +16,7 @@ object WatchServiceTask {
  * logic that takes care of properly shutting down and monitoring
  * the watcher thread
  */
-class WatchServiceTask(notifyActor: ActorRef) extends Runnable with Logging {
+case class WatchServiceTask(notifyActor: ActorRef) extends Runnable {
 
   private val watchService = FileSystems.getDefault.newWatchService()
 
@@ -37,7 +29,6 @@ class WatchServiceTask(notifyActor: ActorRef) extends Runnable with Logging {
    */
   def run() {
     try {
-      logger.debug("Waiting for file system events...")
       while (!Thread.currentThread().isInterrupted) {
         val key = watchService.take()
         key.pollEvents() foreach { event =>
@@ -47,14 +38,13 @@ class WatchServiceTask(notifyActor: ActorRef) extends Runnable with Logging {
             // Don't really have a choice here because of type erasure.
             case kind: WatchEvent.Kind[_] if List(ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY).contains(kind) =>
               notifyActor ! EventAtPath(kind, path)
-            case x => logger.warn(s"Unknown event $x")
+            case _ =>
           }
         }
         key.reset()
       }
     } catch {
-      case e: InterruptedException =>
-        logger.info("Interrupting, bye!")
+      case e: InterruptedException => // catch and continue
     } finally {
       stopService()
     }
@@ -102,7 +92,6 @@ class WatchServiceTask(notifyActor: ActorRef) extends Runnable with Logging {
    * Stops the WatchService current
    */
   def stopService() {
-    logger.debug("Stopping WatchService")
     watchService.close()
   }
 }
