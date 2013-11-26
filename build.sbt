@@ -15,8 +15,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-testkit" % "2.2.1" % "test",
   "com.typesafe.akka" %% "akka-agent" % "2.2.1",
   "com.typesafe" %% "scalalogging-slf4j" % "1.0.1",
-  "org.slf4j" % "slf4j-api" % "1.7.1",
-  "ch.qos.logback" % "logback-classic" % "1.0.3"
+  "org.slf4j" % "slf4j-api" % "1.7.1"
 )
 
 testOptions in Test += Tests.Setup(classLoader =>
