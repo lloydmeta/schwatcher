@@ -1,10 +1,9 @@
 package com.beachape.filemanagement
 
-import akka.actor.{Actor, Props}
+import akka.actor.{ActorLogging, Actor, Props}
 import akka.routing.{SmallestMailboxRouter, DefaultResizer}
 import com.beachape.filemanagement.Messages._
 import com.beachape.filemanagement.RegistryTypes.Callbacks
-import com.typesafe.scalalogging.slf4j.Logging
 import java.nio.file.StandardWatchEventKinds._
 import java.nio.file.{Path, WatchEvent}
 import scala.collection.mutable
@@ -31,7 +30,7 @@ object MonitorActor {
  * Should be instantiated with Props provided via companion object factory
  * method
  */
-class MonitorActor(concurrency: Int = 5) extends Actor with Logging with RecursiveFileActions {
+class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with RecursiveFileActions {
 
   // Smallest mailbox router for callback actors
   private[this] val callbackActors = context.actorOf(
@@ -60,7 +59,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
 
   def receive = {
     case EventAtPath(event, path) =>
-      logger.debug(s"Event $event at path: $path")
+      log.debug(s"Event $event at path: $path")
       // Ensure that only absolute paths are used
       val absolutePath = path.toAbsolutePath
       processCallbacksFor(event.asInstanceOf[WatchEvent.Kind[Path]], absolutePath)
@@ -76,7 +75,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
       val absolutePath = path.toAbsolutePath
       modifyCallbackRegistry(event, _ withoutCallbacksFor(absolutePath, recursive))
 
-    case _ => logger.error("MonitorActor received an unexpected message :( !")
+    case _ => log.error("MonitorActor received an unexpected message :( !")
   }
 
   /**
@@ -113,10 +112,10 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
    * @param path Path (Java type) to be registered
    */
   private[this] def addPathToWatchServiceTask(eventType: WatchEvent.Kind[Path], path: Path, recursive: Boolean = false) {
-    logger.debug(s"Adding $path to WatchServiceTask")
+    log.debug(s"Adding $path to WatchServiceTask")
     watchServiceTask.watch(path, eventType)
     if (recursive) forEachDir(path) { subDir =>
-      logger.debug(s"Adding $subDir to WatchServiceTask")
+      log.debug(s"Adding $subDir to WatchServiceTask")
       watchServiceTask.watch(subDir, eventType)
     }
   }
@@ -136,7 +135,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with Logging with Recursi
         callbacks <- callbacksFor(event, lookupPath)
         callback  <- callbacks
       } {
-        logger.debug(s"Sending callback for path: $path")
+        log.debug(s"Sending callback for path: $path")
         callbackActors ! PerformCallback(path, callback)
       }
     }

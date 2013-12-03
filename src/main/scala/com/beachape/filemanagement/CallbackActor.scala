@@ -1,7 +1,6 @@
 package com.beachape.filemanagement
 
-import akka.actor.{Actor, Props}
-import com.typesafe.scalalogging.slf4j.Logging
+import akka.actor.{ActorLogging, Actor, Props}
 import com.beachape.filemanagement.Messages.PerformCallback
 
 /**
@@ -25,9 +24,12 @@ object CallbackActor {
  *
  * Should be created via companion method's props
  */
-class CallbackActor extends Actor with Logging {
+class CallbackActor extends Actor with ActorLogging {
   def receive = {
-    case PerformCallback(path, callback) => callback(path)
-    case _ => logger.error("Unknown message received")
+    case PerformCallback(path, callback) => {
+      log.debug(s"Performing callback for path: $path")
+      callback(path)
+    }
+    case _ => log.error("Unknown message received")
   }
 }
