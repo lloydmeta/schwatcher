@@ -1,14 +1,13 @@
 package com.beachape.filemanagement
 
 import com.beachape.filemanagement.RegistryTypes._
-import com.typesafe.scalalogging.slf4j.Logging
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.{FileVisitResult, SimpleFileVisitor, Files, Path}
 
 /**
  * Trait for allowing a block of code to be run recursively given a directory path
  */
-trait RecursiveFileActions extends Logging {
+trait RecursiveFileActions {
 
   /**
    * Recursively performs an action given a directory path
@@ -28,6 +27,5 @@ trait RecursiveFileActions extends Logging {
           FileVisitResult.CONTINUE
         }
       })
-    else logger.debug(s"Path '$path' is not a directory, skipping recursive action")
   }
 }
