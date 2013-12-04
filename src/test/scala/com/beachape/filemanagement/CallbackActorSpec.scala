@@ -8,7 +8,10 @@ import java.nio.file.Paths
 import org.scalatest.BeforeAndAfter
 import org.scalatest.FunSpec
 import org.scalatest.matchers.ShouldMatchers
-import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Promise}
+import ExecutionContext.Implicits.global
+import scala.concurrent.Promise
+import scala.util.Success
 
 class CallbackActorSpec extends TestKit(ActorSystem("testSystem"))
   with FunSpec
@@ -19,25 +22,30 @@ class CallbackActorSpec extends TestKit(ActorSystem("testSystem"))
   val callbackActor = system.actorOf(CallbackActor())
   val tmpDirPath = Paths get System.getProperty("java.io.tmpdir")
 
-  var counter = 0
-
-  before {
-    counter = 0
+  trait Fixtures {
+    val p = Promise[Int]()
+    val dummyFunction: Callback = { path => p.success(1)}
+    val dummySendFunction: Callback = { path => testActor ! "Up yours!" }
   }
 
   describe("#receive") {
 
-    val dummyFunction: Callback = { path => counter += 1}
-    val dummySendFunction: Callback = { path => testActor ! "Up yours!" }
-
     it("should take a PerformCallback object and perform the callback") {
-      callbackActor ! PerformCallback(tmpDirPath, dummyFunction)
-      within(1 second) { counter should be(1) }
+      new Fixtures {
+        callbackActor ! PerformCallback(tmpDirPath, dummyFunction)
+        p.future.onComplete {
+          case Success(value) => value should be(1)
+          case _ => true should be(false)
+        }
+      }
+
     }
 
     it("should work with callbacks that send messages") {
-      callbackActor ! PerformCallback(tmpDirPath, dummySendFunction)
-      expectMsg("Up yours!")
+      new Fixtures {
+        callbackActor ! PerformCallback(tmpDirPath, dummySendFunction)
+        expectMsg("Up yours!")
+      }
     }
 
   }
