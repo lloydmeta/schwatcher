@@ -116,8 +116,8 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
    * @return Map[WatchEvent.Kind[Path], CallbackRegistry]
    */
   private[this] def newCallbackRegistryMap( cbRegistryMap: CallbackRegistryMap,
-                                            eventType: WatchEvent.Kind[Path]
-                                           ,modify: CallbackRegistry => CallbackRegistry): CallbackRegistryMap = {
+                                            eventType: WatchEvent.Kind[Path],
+                                            modify: CallbackRegistry => CallbackRegistry): CallbackRegistryMap = {
     if (!cbRegistryMap.isDefinedAt(eventType))
       cbRegistryMap
     else {
