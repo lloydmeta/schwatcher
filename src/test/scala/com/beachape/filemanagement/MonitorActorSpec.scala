@@ -69,6 +69,14 @@ with PrivateMethodTester {
       event, { registry: CallbackRegistry => registry.withoutCallbacksFor(absolutePath, recursive)})
     }
 
+    // Recursive version of the same as above
+    def addCallbackFor(originalMap: CallbackRegistryMap,
+                       pathsCallbackRecursive: List[(Path, WatchEvent.Kind[Path], Callback, Boolean)]): CallbackRegistryMap = {
+      pathsCallbackRecursive.foldLeft(originalMap) {
+        case (memo, (path, eventType, callback, recursive)) => addCallbackFor(memo, path, eventType, callback, recursive)
+      }
+    }
+
   }
 
   describe("construction via Props factory") {
@@ -171,60 +179,65 @@ with PrivateMethodTester {
 
     }
 
-//    describe("#callbacksFor") {
-//
-//      it("should return Some[Callbacks] that contains prior registered callbacks for a path") {
-//        new Fixtures {
-//          addCallbackFor(ENTRY_CREATE, tempFile.toPath, dummyFunction)
-//          monitorActor.callbacksFor(ENTRY_CREATE, tempFile.toPath) foreach {
-//            callbacks =>
-//              callbacks should contain(dummyFunction)
-//          }
-//        }
-//      }
-//
-//      it("should return Some[Callbacks] that does not contain callbacks for paths never registered") {
-//        new Fixtures {
-//          val tempFile2 = java.io.File.createTempFile("fakeFile2", ".log")
-//          tempFile2.deleteOnExit()
-//          monitorActor.callbacksFor(ENTRY_CREATE, tempFile2.toPath).isEmpty should be(true)
-//        }
-//      }
-//
-//    }
-//
-//    describe("#processCallbacksFor") {
-//
-//      val callback = {
-//        path: Path => testActor ! path
-//      }
-//
-//      it("should get the proper callback for a file path") {
-//        new Fixtures {
-//          addCallbackFor(ENTRY_CREATE, tempDirPath, callback)
-//          addCallbackFor(ENTRY_CREATE, tempDirLevel2Path, callback)
-//          addCallbackFor(ENTRY_CREATE, tempFileInTempDir, callback)
-//          monitorActor.processCallbacksFor(ENTRY_CREATE, tempFileInTempDir)
-//          /*
-//            Fired twice because tempDirPath and tempFileInTempDir are both registered.
-//            The file path passed to the callback is still the same though because it
-//            is still the file
-//          */
-//          expectMsgAllOf(tempFileInTempDir, tempFileInTempDir)
-//        }
-//      }
-//
-//      it("should get the proper callback for a directory") {
-//        new Fixtures {
-//          addCallbackFor(ENTRY_MODIFY, tempDirPath, callback)
-//          addCallbackFor(ENTRY_MODIFY, tempDirLevel2Path, callback)
-//          addCallbackFor(ENTRY_MODIFY, tempFileInTempDir, callback)
-//          monitorActor.processCallbacksFor(ENTRY_MODIFY, tempDirPath)
-//          expectMsg(tempDirPath)
-//        }
-//      }
-//
-//    }
+    describe("#callbacksFor") {
+
+
+      it("should return Some[Callbacks] that contains prior registered callbacks for a path") {
+        new Fixtures {
+          val cbMap = addCallbackFor(emptyCbMap, tempFile.toPath, ENTRY_CREATE, dummyFunction)
+          monitorActor.callbacksFor(cbMap, ENTRY_CREATE, tempFile.toPath) foreach {
+            callbacks =>
+              callbacks should contain(dummyFunction)
+          }
+        }
+      }
+
+      it("should return Some[Callbacks] that does not contain callbacks for paths never registered") {
+        new Fixtures {
+          val tempFile2 = java.io.File.createTempFile("fakeFile2", ".log")
+          tempFile2.deleteOnExit()
+          monitorActor.callbacksFor(emptyCbMap, ENTRY_CREATE, tempFile2.toPath).isEmpty should be(true)
+        }
+      }
+
+    }
+
+    describe("#processCallbacksFor") {
+
+      val callback = {
+        path: Path => testActor ! path
+      }
+
+      it("should get the proper callback for a file path") {
+        new Fixtures {
+          val cbMap = addCallbackFor(emptyCbMap, List(
+            (tempDirPath, ENTRY_CREATE, callback, false),
+            (tempDirLevel2Path, ENTRY_CREATE, callback, false),
+            (tempFileInTempDir, ENTRY_CREATE, callback, false)
+          ))
+          monitorActor.processCallbacksFor(cbMap, ENTRY_CREATE, tempFileInTempDir)
+          /*
+            Fired twice because tempDirPath and tempFileInTempDir are both registered.
+            The file path passed to the callback is still the same though because it
+            is still the file
+          */
+          expectMsgAllOf(tempFileInTempDir, tempFileInTempDir)
+        }
+      }
+
+      it("should get the proper callback for a directory") {
+        new Fixtures {
+          val cbMap = addCallbackFor(emptyCbMap, List(
+            (tempDirPath, ENTRY_MODIFY, callback, false),
+            (tempDirLevel2Path, ENTRY_MODIFY, callback, false),
+            (tempFileInTempDir, ENTRY_MODIFY, callback, false)
+          ))
+          monitorActor.processCallbacksFor(cbMap, ENTRY_MODIFY, tempDirPath)
+          expectMsg(tempDirPath)
+        }
+      }
+
+    }
 //
 //    describe("messaging tests") {
 //
