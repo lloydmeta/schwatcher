@@ -102,7 +102,6 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
           )
         )
       )
-
     }
 
     case _ => log.error("MonitorActor received an unexpected message :( !")
