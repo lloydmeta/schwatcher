@@ -127,7 +127,7 @@ and once for the path registered for the directory above it (its parent director
 
 Contributors
 ------------
-- (Crdueck)[https://github.com/crdueck]
+- [Crdueck](https://github.com/crdueck)
 
 License
 ------
