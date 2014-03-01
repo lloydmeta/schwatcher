@@ -1,6 +1,6 @@
 name := "schwatcher"
 
-version := "0.0.7"
+version := "0.0.8"
 
 scalaVersion := "2.10.3"
 
@@ -12,8 +12,8 @@ resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/release
 
 libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "1.9.1" % "test",
-  "com.typesafe.akka" %% "akka-testkit" % "2.2.1" % "test",
-  "com.typesafe.akka" %% "akka-agent" % "2.2.1"
+  "com.typesafe.akka" %% "akka-testkit" % "2.2.3" % "test",
+  "com.typesafe.akka" %% "akka-agent" % "2.2.3"
 )
 
 publishTo <<= version { v: String =>
