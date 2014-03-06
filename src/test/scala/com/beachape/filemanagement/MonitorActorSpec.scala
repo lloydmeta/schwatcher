@@ -400,7 +400,7 @@ with PrivateMethodTester {
             // Wait 10 seconds for finish callback
             Thread.sleep(10000L)
             // SensitivityWatchEventModifier.HIGH should sensitive than SensitivityWatchEventModifier.LOW
-            timeHIGH should be < timeLOW
+            timeHIGH should be <= timeLOW
           case None    => true should be (true)
         }
       }
