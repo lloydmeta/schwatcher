@@ -2,6 +2,7 @@ package com.beachape.filemanagement
 
 import com.beachape.filemanagement.RegistryTypes._
 import java.nio.file.{Path, WatchEvent}
+import java.nio.file.WatchEvent.Modifier
 import scala.language.existentials
 
 /*
@@ -30,6 +31,7 @@ object Messages{
    */
   sealed case class RegisterCallback(
                                       event: WatchEvent.Kind[Path],
+                                      modifier: Option[Modifier] = None,
                                       recursive: Boolean = false,
                                       path: Path,
                                       callback: Callback)

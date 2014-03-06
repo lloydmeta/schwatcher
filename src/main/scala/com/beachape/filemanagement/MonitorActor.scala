@@ -6,6 +6,7 @@ import com.beachape.filemanagement.Messages._
 import com.beachape.filemanagement.RegistryTypes.Callbacks
 import java.nio.file.StandardWatchEventKinds._
 import java.nio.file.{Path, WatchEvent}
+import java.nio.file.WatchEvent.Modifier
 
 /**
  * Companion object for creating Monitor actor instances
@@ -75,10 +76,10 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
       processCallbacksFor(currentCallbackRegistryMap, event.asInstanceOf[WatchEvent.Kind[Path]], absolutePath)
     }
 
-    case RegisterCallback(event, recursive, path, callback) => {
+    case RegisterCallback(event, modifier, recursive, path, callback) => {
       // Ensure that only absolute paths are used
       val absolutePath = path.toAbsolutePath
-      addPathToWatchServiceTask(event, absolutePath, recursive)
+      addPathToWatchServiceTask(event, modifier, absolutePath, recursive)
       context.become(
         withCallbackRegistryMap(
           newCallbackRegistryMap(
@@ -146,12 +147,12 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
    * @param recursive Boolean watch subdirectories of the given path
    * @param path Path (Java type) to be registered
    */
-  private[this] def addPathToWatchServiceTask(eventType: WatchEvent.Kind[Path], path: Path, recursive: Boolean = false) {
+  private[this] def addPathToWatchServiceTask(eventType: WatchEvent.Kind[Path], modifier: Option[Modifier], path: Path, recursive: Boolean = false) {
     log.debug(s"Adding $path to WatchServiceTask")
-    watchServiceTask.watch(path, eventType)
+    watchServiceTask.watch(path, eventType, modifier)
     if (recursive) forEachDir(path) { subDir =>
       log.debug(s"Adding $subDir to WatchServiceTask")
-      watchServiceTask.watch(subDir, eventType)
+      watchServiceTask.watch(subDir, eventType, modifier)
     }
   }
 

@@ -6,12 +6,14 @@ import com.beachape.filemanagement.Messages._
 import com.beachape.filemanagement.RegistryTypes.Callback
 import java.nio.file.StandardWatchEventKinds._
 import java.nio.file.{Files, Path, WatchEvent}
+import java.nio.file.WatchEvent.Modifier
 import org.scalatest.BeforeAndAfter
 import org.scalatest.FunSpec
 import org.scalatest.PrivateMethodTester
 import org.scalatest.matchers.ShouldMatchers
 import java.io.{FileWriter, BufferedWriter}
 import scala.concurrent.duration._
+import scala.util.control.NonFatal
 import com.beachape.filemanagement.MonitorActor.CallbackRegistryMap
 
 class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
@@ -47,6 +49,9 @@ with PrivateMethodTester {
     }
     val newRegistryMap = PrivateMethod[CallbackRegistryMap]('newCallbackRegistryMap)
 
+    val HIGH = get_com_sun_nio_file_SensitivityWatchEventModifier("HIGH")
+    val LOW  = get_com_sun_nio_file_SensitivityWatchEventModifier("LOW")
+
     // Test helper methods
     def addCallbackFor(originalMap: CallbackRegistryMap,
                        path: Path,
@@ -78,6 +83,19 @@ with PrivateMethodTester {
                        pathsCallbackRecursive: List[(Path, WatchEvent.Kind[Path], Callback, Boolean)]): CallbackRegistryMap = {
       pathsCallbackRecursive.foldLeft(originalMap) {
         case (memo, (path, eventType, callback, recursive)) => addCallbackFor(memo, path, eventType, callback, recursive)
+      }
+    }
+
+    // Load `com.sun.nio.file.SensitivityWatchEventModifie._` if possible
+    private def get_com_sun_nio_file_SensitivityWatchEventModifier(field:String): Option[Modifier] = {
+      try {
+        val c = Class.forName("com.sun.nio.file.SensitivityWatchEventModifier")
+        val f = c.getField(field)
+        val m = f.get(c).asInstanceOf[Modifier]
+        Some(m)
+      } catch {
+        case NonFatal(e) =>
+          None
       }
     }
 
@@ -251,7 +269,7 @@ with PrivateMethodTester {
 
         it("should register a callback when given a file path") {
           new MessagingFixtures {
-            val registerFileCallbackMessage = RegisterCallback(ENTRY_CREATE, recursive = false, tempFileInTempDir, callbackFunc)
+            val registerFileCallbackMessage = RegisterCallback(ENTRY_CREATE, None, recursive = false, tempFileInTempDir, callbackFunc)
             monitorActorRef ! registerFileCallbackMessage
             monitorActorRef ! EventAtPath(ENTRY_CREATE, tempFileInTempDir)
             expectMsg(tempFileInTempDir)
@@ -261,7 +279,7 @@ with PrivateMethodTester {
 
         it("should register a callback when given a directory path") {
           new MessagingFixtures {
-            val registerFileCallbackMessage = RegisterCallback(ENTRY_MODIFY, recursive = false, tempDirPath, callbackFunc)
+            val registerFileCallbackMessage = RegisterCallback(ENTRY_MODIFY, None, recursive = false, tempDirPath, callbackFunc)
             monitorActorRef ! registerFileCallbackMessage
             monitorActorRef ! EventAtPath(ENTRY_MODIFY, tempDirPath)
             expectMsg(tempDirPath)
@@ -270,7 +288,7 @@ with PrivateMethodTester {
 
         it("should register a callback recursively for a directory path") {
           new MessagingFixtures {
-            val registerFileCallbackMessage = RegisterCallback(ENTRY_DELETE, recursive = true, tempDirPath, callbackFunc)
+            val registerFileCallbackMessage = RegisterCallback(ENTRY_DELETE, None, recursive = true, tempDirPath, callbackFunc)
             monitorActorRef ! registerFileCallbackMessage
             monitorActorRef ! EventAtPath(ENTRY_DELETE, tempDirLevel1Path)
             monitorActorRef ! EventAtPath(ENTRY_DELETE, tempDirLevel2Path)
@@ -289,7 +307,7 @@ with PrivateMethodTester {
 
         it("should un-register a callback when given a file path") {
           new MessagingFixtures {
-            monitorActorRef ! RegisterCallback(ENTRY_CREATE, recursive = false, tempFileInTempDir, callbackFunc)
+            monitorActorRef ! RegisterCallback(ENTRY_CREATE, None, recursive = false, tempFileInTempDir, callbackFunc)
             monitorActorRef ! UnRegisterCallback(ENTRY_CREATE, recursive = false, tempFileInTempDir)
             monitorActorRef ! EventAtPath(ENTRY_CREATE, tempFileInTempDir)
             expectNoMsg()
@@ -299,7 +317,7 @@ with PrivateMethodTester {
 
         it("should un-register a callback when given a directory path") {
           new MessagingFixtures {
-            monitorActorRef ! RegisterCallback(ENTRY_DELETE, recursive = false, tempDirPath, callbackFunc)
+            monitorActorRef ! RegisterCallback(ENTRY_DELETE, None, recursive = false, tempDirPath, callbackFunc)
             monitorActorRef ! UnRegisterCallback(ENTRY_DELETE, recursive = false, tempDirPath)
             monitorActorRef ! EventAtPath(ENTRY_DELETE, tempDirPath)
             expectNoMsg()
@@ -308,7 +326,7 @@ with PrivateMethodTester {
 
         it("should un-register a callback recursively for a directory path") {
           new MessagingFixtures {
-            monitorActorRef ! RegisterCallback(ENTRY_MODIFY, recursive = true, tempDirPath, callbackFunc)
+            monitorActorRef ! RegisterCallback(ENTRY_MODIFY, None, recursive = true, tempDirPath, callbackFunc)
             monitorActorRef ! UnRegisterCallback(ENTRY_MODIFY, recursive = true, tempDirPath)
             monitorActorRef ! EventAtPath(ENTRY_MODIFY, tempDirLevel1Path)
             monitorActorRef ! EventAtPath(ENTRY_MODIFY, tempDirLevel1Path)
@@ -318,8 +336,8 @@ with PrivateMethodTester {
 
         it("should not un-register a callback for a file inside a directory tree even when called recursively") {
           new MessagingFixtures {
-            monitorActorRef ! RegisterCallback(ENTRY_CREATE, recursive = true, tempDirPath, callbackFunc)
-            monitorActorRef ! RegisterCallback(ENTRY_CREATE, recursive = true, tempFileInTempDir, callbackFunc)
+            monitorActorRef ! RegisterCallback(ENTRY_CREATE, None, recursive = true, tempDirPath, callbackFunc)
+            monitorActorRef ! RegisterCallback(ENTRY_CREATE, None, recursive = true, tempFileInTempDir, callbackFunc)
             monitorActorRef ! UnRegisterCallback(ENTRY_CREATE, recursive = true, tempDirPath)
             monitorActorRef ! EventAtPath(ENTRY_CREATE, tempFileInTempDir)
             expectMsg(tempFileInTempDir)
@@ -336,7 +354,7 @@ with PrivateMethodTester {
 
     it("should fire the appropriate callback if a monitored file has been modified") {
       new Fixtures {
-        val register = RegisterCallback(ENTRY_MODIFY, recursive = false, tempFile.toPath,
+        val register = RegisterCallback(ENTRY_MODIFY, None, recursive = false, tempFile.toPath,
           path => testActor ! s"Modified file is at $path")
         monitorActorRef ! register
         // Sleep to make sure that the Java WatchService is monitoring the file ...
@@ -347,6 +365,43 @@ with PrivateMethodTester {
         // Within 60 seconds is used in case the Java WatchService is acting slow ...
         within(60 seconds) {
           expectMsg(s"Modified file is at ${tempFile.toPath}")
+        }
+      }
+    }
+
+  }
+
+  describe("Register with specified modifier") {
+    it("should use specified modifier for polling event") {
+      new Fixtures {
+        var start:Long = _
+        var timeLOW:Long = _
+        var timeHIGH:Long = _
+        // Execute only when `HIGH` is available
+        HIGH match {
+          case Some(_) =>
+            val registerLOW = RegisterCallback(ENTRY_MODIFY, LOW, recursive = false, tempFile.toPath,
+              path => {
+                timeLOW = System.nanoTime - start
+            })
+            val registerHIGH = RegisterCallback(ENTRY_MODIFY, HIGH, recursive = false, tempFile.toPath,
+              path => {
+                timeHIGH = System.nanoTime - start
+            })
+
+            start = System.nanoTime
+            monitorActorRef ! registerLOW
+            monitorActorRef ! registerHIGH
+            // Sleep to make sure that the Java WatchService is monitoring the file ...
+            Thread.sleep(3000)
+            val writer = new BufferedWriter(new FileWriter(tempFile))
+            writer.write("There's text in here wee!!")
+            writer.close
+            // Wait 10 seconds for finish callback
+            Thread.sleep(10000L)
+            // SensitivityWatchEventModifier.HIGH should sensitive than SensitivityWatchEventModifier.LOW
+            timeHIGH should be < timeLOW
+          case None    => true should be (true)
         }
       }
     }
