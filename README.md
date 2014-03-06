@@ -24,7 +24,7 @@ Installation
 Add the following to your `build.sbt`
 
 ```scala
-libraryDependencies += "com.beachape.filemanagement" %% "schwatcher" % "0.0.9"
+libraryDependencies += "com.beachape.filemanagement" %% "schwatcher" % "0.0.10"
 ```
 
 If the above does not work because it cannot be resolved, its likely because it hasn't been synced to Maven central yet.
@@ -33,10 +33,12 @@ In that case, download a SNAPSHOT release of the same version by adding this to 
 ```
 resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 
-libraryDependencies += "com.beachape.filemanagement" %% "schwatcher" % "0.0.9-SNAPSHOT"
+libraryDependencies += "com.beachape.filemanagement" %% "schwatcher" % "0.0.10-SNAPSHOT"
 ```
 
 __Those using Akka 2.1.x__ should stay on 0.0.2 as 0.0.3 onwards uses Akka 2.2.x, which [requires some work to upgrade to](http://doc.akka.io/docs/akka/current/project/migration-guide-2.1.x-2.2.x.html).
+__Those using Akka 2.2.x__ should stay on 0.0.9 as 0.0.10 onwards uses Akka 2.3.x, which [may require some work to upgrade to](http://doc.akka.io/docs/akka/2.3.0/project/migration-guide-2.2.x-2.3.x.html).
+
 
 Example Usage
 -------------
