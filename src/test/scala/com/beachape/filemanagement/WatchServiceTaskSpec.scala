@@ -42,7 +42,7 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
     describe("for ENTRY_CREATE") {
 
       it("should cause ENTRY_CREATE events to be detectable for a directory path") {
-        val Some(watchKey) = watchServiceTask.watch(tempDirPath, ENTRY_CREATE)
+        val Some(watchKey) = watchServiceTask.watch(tempDirPath, ENTRY_CREATE, None)
         Files.createTempFile(tempDirPath, "hello", ".there2").toFile.deleteOnExit()
         var eventList = watchKey.pollEvents
         while (eventList.isEmpty){
@@ -54,7 +54,7 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
       }
 
       it("should cause ENTRY_CREATE events to be detectable for a file path") {
-        val Some(watchKey) = watchServiceTask.watch(tempFileInTempDir, ENTRY_CREATE)
+        val Some(watchKey) = watchServiceTask.watch(tempFileInTempDir, ENTRY_CREATE, None)
         Files.createTempFile(tempDirPath, "hello", ".there2").toFile.deleteOnExit()
         var eventList = watchKey.pollEvents
         while (eventList.isEmpty){
@@ -68,7 +68,7 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
       describe("implicit testing of #contextAbsolutePath") {
 
         it("should have the correct path in the event") {
-          val Some(watchKey) = watchServiceTask.watch(tempDirPath, ENTRY_CREATE)
+          val Some(watchKey) = watchServiceTask.watch(tempDirPath, ENTRY_CREATE, None)
           val fileCreated = Files.createTempFile(tempDirPath, "hello", ".there2")
           fileCreated.toFile.deleteOnExit()
           var eventList = watchKey.pollEvents
@@ -91,7 +91,7 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
 
       it("should cause ENTRY_DELETE events to be detectable for a directory path") {
         val fileToDelete  = Files.createTempFile(tempDirPath, "test", ".file")
-        val Some(watchKey) = watchServiceTask.watch(tempDirPath, ENTRY_DELETE)
+        val Some(watchKey) = watchServiceTask.watch(tempDirPath, ENTRY_DELETE, None)
         fileToDelete.toFile.delete()
         var eventList = watchKey.pollEvents()
         while (eventList.isEmpty){
@@ -104,7 +104,7 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
 
       it("should cause ENTRY_DELETE events to be detectable for a file path") {
         val fileToDelete  = Files.createTempFile(tempDirPath, "test", ".file")
-        val Some(watchKey) = watchServiceTask.watch(tempFileInTempDir, ENTRY_DELETE)
+        val Some(watchKey) = watchServiceTask.watch(tempFileInTempDir, ENTRY_DELETE, None)
         fileToDelete.toFile.delete()
         var eventList = watchKey.pollEvents()
         while (eventList.isEmpty){
@@ -119,7 +119,7 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
 
         it("should have the correct path in the event") {
           val fileToDelete  = Files.createTempFile(tempDirPath, "test", ".file")
-          val Some(watchKey) = watchServiceTask.watch(tempDirPath, ENTRY_DELETE)
+          val Some(watchKey) = watchServiceTask.watch(tempDirPath, ENTRY_DELETE, None)
           fileToDelete.toFile.delete()
           var eventList = watchKey.pollEvents()
           while (eventList.isEmpty){
@@ -139,7 +139,7 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
     describe("for ENTRY_MODIFY") {
 
       it("should cause ENTRY_MODIFY events to be detectable for a directory path") {
-        val Some(watchKey) = watchServiceTask.watch(tempDirPath, ENTRY_MODIFY)
+        val Some(watchKey) = watchServiceTask.watch(tempDirPath, ENTRY_MODIFY, None)
         val writer = new BufferedWriter(new FileWriter(tempFileInTempDir.toFile))
         writer.write(
           """
@@ -155,7 +155,7 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
       }
 
       it("should cause ENTRY_MODIFY events to be detectable for a file path") {
-        val Some(watchKey) = watchServiceTask.watch(tempFileInTempDir, ENTRY_MODIFY)
+        val Some(watchKey) = watchServiceTask.watch(tempFileInTempDir, ENTRY_MODIFY, None)
         val writer = new BufferedWriter(new FileWriter(tempFileInTempDir.toFile))
         writer.write(
           """
@@ -173,7 +173,7 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
       describe("implicit testing of #contextAbsolutePath") {
 
         it("should have the correct path in the event") {
-          val Some(watchKey) = watchServiceTask.watch(tempFileInTempDir, ENTRY_MODIFY)
+          val Some(watchKey) = watchServiceTask.watch(tempFileInTempDir, ENTRY_MODIFY, None)
           val writer = new BufferedWriter(new FileWriter(tempFileInTempDir.toFile))
           writer.write(
             """
