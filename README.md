@@ -132,6 +132,7 @@ and once for the path registered for the directory above it (its parent director
 Contributors
 ------------
 - [Crdueck](https://github.com/crdueck)
+- [georgeOsdDev](https://github.com/georgeOsdDev)
 
 License
 ------
