@@ -16,7 +16,7 @@ fired for certain [Path](http://docs.oracle.com/javase/7/docs/api/java/nio/file/
 by sending messages to it, then simply wait for the callbacks to be fired. The goal of Schwatcher is to facilitate the
 use of the Java7 API in Scala in a simple way that is in line with the functional programming paradigm.
 
-__As of now, only Scala versions 2.10.x are supported__
+__As of now, only Scala versions 2.10.x and 2.11.x are supported__
 
 Installation
 ------------
@@ -24,7 +24,7 @@ Installation
 Add the following to your `build.sbt`
 
 ```scala
-libraryDependencies += "com.beachape.filemanagement" %% "schwatcher" % "0.1.1"
+libraryDependencies += "com.beachape.filemanagement" %% "schwatcher" % "0.1.2"
 ```
 
 If the above does not work because it cannot be resolved, its likely because it hasn't been synced to Maven central yet.
@@ -33,7 +33,7 @@ In that case, download a SNAPSHOT release of the same version by adding this to 
 ```
 resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 
-libraryDependencies += "com.beachape.filemanagement" %% "schwatcher" % "0.1.1-SNAPSHOT"
+libraryDependencies += "com.beachape.filemanagement" %% "schwatcher" % "0.1.2-SNAPSHOT"
 ```
 
 __Those using Akka 2.1.x__ should stay on 0.0.2 as 0.0.3 onwards uses Akka 2.2.x, which [requires some work to upgrade to](http://doc.akka.io/docs/akka/current/project/migration-guide-2.1.x-2.2.x.html).

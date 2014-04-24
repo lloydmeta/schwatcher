@@ -7,18 +7,16 @@ import com.beachape.filemanagement.RegistryTypes.Callback
 import java.nio.file.StandardWatchEventKinds._
 import java.nio.file.{Files, Path, WatchEvent}
 import java.nio.file.WatchEvent.Modifier
-import org.scalatest.BeforeAndAfter
-import org.scalatest.FunSpec
-import org.scalatest.PrivateMethodTester
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest._
 import java.io.{FileWriter, BufferedWriter}
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
+import scala.language.postfixOps
 import com.beachape.filemanagement.MonitorActor.CallbackRegistryMap
 
 class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
-with FunSpec
-with ShouldMatchers
+with FunSpecLike
+with Matchers
 with BeforeAndAfter
 with ImplicitSender
 with PrivateMethodTester {

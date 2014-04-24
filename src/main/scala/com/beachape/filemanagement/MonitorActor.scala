@@ -1,7 +1,7 @@
 package com.beachape.filemanagement
 
 import akka.actor.{ActorLogging, Actor, Props}
-import akka.routing.{SmallestMailboxRouter, DefaultResizer}
+import akka.routing.{SmallestMailboxPool, DefaultResizer}
 import com.beachape.filemanagement.Messages._
 import com.beachape.filemanagement.RegistryTypes.Callbacks
 import java.nio.file.StandardWatchEventKinds._
@@ -43,10 +43,12 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
 
   // Smallest mailbox router for callback actors
   private[this] val callbackActors = context.actorOf(
-    CallbackActor().withRouter(
-      SmallestMailboxRouter(
-        resizer = Some(DefaultResizer(lowerBound = concurrency, upperBound = concurrency + 1)))),
-      "callbackActors")
+    SmallestMailboxPool(
+      concurrency,
+       resizer = Some(DefaultResizer(lowerBound = concurrency, upperBound = concurrency + 1))
+      ).props(CallbackActor()),
+    "callbackActors"
+    )
 
   private[this] val monitorActor = self
   private[this] val watchServiceTask = new WatchServiceTask(monitorActor)
