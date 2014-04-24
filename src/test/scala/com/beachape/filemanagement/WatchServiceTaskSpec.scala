@@ -6,9 +6,7 @@ import collection.JavaConversions._
 import java.io.{FileWriter, BufferedWriter}
 import java.nio.file.StandardWatchEventKinds._
 import java.nio.file.{Path, Files}
-import org.scalatest.BeforeAndAfter
-import org.scalatest.FunSpec
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest._
 
 class DummyActor extends Actor {
   def receive = {
@@ -17,8 +15,8 @@ class DummyActor extends Actor {
 }
 
 class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
-  with FunSpec
-  with ShouldMatchers
+  with FunSpecLike
+  with Matchers
   with BeforeAndAfter {
 
   val dummyActor = TestActorRef[DummyActor]

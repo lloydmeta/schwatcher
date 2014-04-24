@@ -1,17 +1,17 @@
 name := "schwatcher"
 
-version := "0.1.1"
+version := "0.1.2-SNAPSHOT"
 
-scalaVersion := "2.10.4"
+scalaVersion := "2.11.0"
 
-crossScalaVersions := Seq("2.10.0", "2.10.1", "2.10.2", "2.10.3", "2.10.4")
+crossScalaVersions := Seq("2.10.0", "2.10.1", "2.10.2", "2.10.3", "2.10.4", "2.11.0")
 
 crossVersion := CrossVersion.binary
 
 resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
 
 libraryDependencies ++= Seq(
-  "org.scalatest" %% "scalatest" % "1.9.1" % "test",
+  "org.scalatest" %% "scalatest" % "2.1.3" % "test",
   "com.typesafe.akka" %% "akka-testkit" % "2.3.2" % "test",
   "com.typesafe.akka" %% "akka-actor" % "2.3.2"
 )

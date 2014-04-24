@@ -5,17 +5,15 @@ import akka.testkit.{ImplicitSender, TestKit}
 import com.beachape.filemanagement.Messages.PerformCallback
 import com.beachape.filemanagement.RegistryTypes._
 import java.nio.file.Paths
-import org.scalatest.BeforeAndAfter
-import org.scalatest.FunSpec
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest._
 import scala.concurrent.{ExecutionContext, Promise}
 import ExecutionContext.Implicits.global
 import scala.concurrent.Promise
 import scala.util.Success
 
 class CallbackActorSpec extends TestKit(ActorSystem("testSystem"))
-  with FunSpec
-  with ShouldMatchers
+  with FunSpecLike
+  with Matchers
   with BeforeAndAfter
   with ImplicitSender {
 

@@ -1,11 +1,10 @@
 package com.beachape.filemanagement
 
 import java.nio.file.Files
-import org.scalatest.matchers.ShouldMatchers
-import org.scalatest.{BeforeAndAfter, FunSpec}
+import org.scalatest._
 
 class RecursiveFileActionsSpec extends FunSpec
-  with ShouldMatchers
+  with Matchers
   with BeforeAndAfter {
 
   val dummy = new RecursiveFileActions{}
