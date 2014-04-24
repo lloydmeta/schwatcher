@@ -4,7 +4,7 @@ version := "0.1.2-SNAPSHOT"
 
 scalaVersion := "2.11.0"
 
-crossScalaVersions := Seq("2.10.0", "2.10.1", "2.10.2", "2.10.3", "2.10.4", "2.11.0")
+crossScalaVersions := Seq("2.10.4", "2.11.0")
 
 crossVersion := CrossVersion.binary
 
