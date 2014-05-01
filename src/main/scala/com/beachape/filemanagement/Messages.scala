@@ -37,6 +37,25 @@ object Messages{
                                       callback: Callback)
 
   /**
+   * Message case class for telling a MonitorActor that the callback contained
+   * will be the ONLY callback registered for the specific path.
+   *
+   * Mostly intended to be used with RxMonitor; hence the terrible name.
+   *
+   * @param event WatchEvent.Kind[Path], one of ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE
+   * @param recursive Boolean to specify to recursively register the callback or not, defaults to false
+   * @param path Path (Java object) pointing to a file/directory
+   * @param callback (Path) => Unit type function
+   */
+  sealed case class RegisterBossyCallback(
+                                           event: WatchEvent.Kind[Path],
+                                           modifier: Option[Modifier] = None,
+                                           recursive: Boolean = false,
+                                           path: Path,
+                                           callback: Callback
+                                           )
+
+  /**
    * Message case class for telling a MonitorActor to un-register a
    * path for callback
    *

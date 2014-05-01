@@ -1,6 +1,5 @@
 package com.beachape.filemanagement
 
-import java.nio.file.StandardWatchEventKinds._
 import java.nio.file.{Path, Paths, Files}
 import org.scalatest._
 

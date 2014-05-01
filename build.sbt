@@ -13,7 +13,8 @@ resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/release
 libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "2.1.3" % "test",
   "com.typesafe.akka" %% "akka-testkit" % "2.3.2" % "test",
-  "com.typesafe.akka" %% "akka-actor" % "2.3.2"
+  "com.typesafe.akka" %% "akka-actor" % "2.3.2",
+  "com.netflix.rxjava" % "rxjava-scala" % "0.18.1"
 )
 
 publishTo <<= version { v: String =>

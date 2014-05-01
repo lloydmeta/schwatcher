@@ -46,6 +46,8 @@ __0.1.0__ brings with it breaking changes on how to register callbacks (see exam
 Example Usage
 -------------
 
+### Akka
+
 The basic workflow is:
 
 1. Instantiate a MonitorActor
@@ -106,6 +108,50 @@ writer.close
 
 // #=> Something was modified in a file: /Users/lloyd/Desktop/test.txt
 //     Something was modified in a directory: /Users/lloyd/Desktop/test.txt
+```
+
+### RxScala
+
+There is another way to monitor files, which is to use Rx Observables.
+
+This is neat because it allows you to treat notifications for files as, well, an Observable,
+which conceptually is like a Stream, or a Go channel. You can filter on the stream, map on it,
+and basically compose it as you would a normal observable.
+
+
+```scala
+import com.beachape.filemanagement.RxMonitor
+import java.io.{FileWriter, BufferedWriter}
+
+import java.nio.file.Paths
+import java.nio.file.StandardWatchEventKinds._
+
+val monitor = RxMonitor()
+val observable = monitor.observable
+
+val subscription = observable.subscribe(
+  onNext = { p => println(s"Something was modified in a file mufufu: $p")},
+  onError = { t => println(t)},
+  onCompleted = { () => println("Monitor has been shut down") }
+)
+
+val desktopFile = Paths get "/Users/lloyd/Desktop/test"
+
+monitor.registerPath(ENTRY_MODIFY, desktopFile)
+
+Thread.sleep(100)
+
+//modify a monitored file
+val writer = new BufferedWriter(new FileWriter(desktopFile.toFile))
+writer.write("Theres text in here wee!!")
+writer.close
+
+// #=> Something was modified in a file mufufu: /Users/lloyd/Desktop/test
+
+// stop monitoring
+monitor.stop()
+
+// #=> Monitor has been shut down
 ```
 
 Caveats
