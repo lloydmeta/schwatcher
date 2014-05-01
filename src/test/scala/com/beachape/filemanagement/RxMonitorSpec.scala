@@ -8,9 +8,6 @@ import scala.concurrent.Promise
 import org.scalatest.concurrent.ScalaFutures
 import java.nio.file.StandardWatchEventKinds._
 
-/**
- * Created by Lloyd on 5/1/14.
- */
 class RxMonitorSpec extends FunSpec with Matchers with PrivateMethodTester with ScalaFutures {
 
   trait Context {
@@ -49,8 +46,5 @@ class RxMonitorSpec extends FunSpec with Matchers with PrivateMethodTester with 
       whenReady(nextF){ _ should be(EventAtPath(ENTRY_MODIFY, tempDirPath)) }
     }}
   }
-
-
-
 
 }
