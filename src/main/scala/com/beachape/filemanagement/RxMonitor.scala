@@ -8,8 +8,17 @@ import java.nio.file.WatchEvent.Modifier
 import rx.lang.scala.Observable
 import rx.lang.scala.JavaConversions.toScalaObservable
 
+/**
+ * Companion object for instantiating a RxMonitor instance
+ */
 object RxMonitor {
 
+  /**
+   * Returns an RxMonitor instance
+   *
+   * @param actorSystem implicit parameter for an Actor system. Defaults to one called "actorSystem"
+   * @return
+   */
   def apply(implicit actorSystem: ActorSystem = ActorSystem("actorSystem")): RxMonitor = new RxMonitor(actorSystem)
 }
 
@@ -19,9 +28,10 @@ object RxMonitor {
 sealed case class EventAtPath(path: Path, event: WatchEvent.Kind[Path])
 
 /**
- * Reactive Extensions-based class
+ * RxScala-based class that exposes the Observable interface for file monitoring
  *
- * If you want to have a Stream of some kind
+ * Actually powered by an Actor underneath the covers because we do need to keep
+ * state (in particular the CallbackRegistry).
  *
  * Created by Lloyd on 5/1/14.
  */
