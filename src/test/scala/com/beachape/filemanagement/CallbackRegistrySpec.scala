@@ -56,6 +56,15 @@ class CallbackRegistrySpec extends FunSpec
       newRegistry.callbacksFor(tmpDirPath).map(callbacks => callbacks.length should be(3))
     }
 
+    it("should obey the bossy argument and register only 1 callback for a path passed multiple times") {
+      val pathsWithCallbacks = Stream.fill(100)((tmpDirPath, callback))
+      val registryCompleted = pathsWithCallbacks.foldLeft(registry){ (acc, pC) =>
+        val (path, callback) = pC
+        acc.withCallbackFor(path, callback, bossy = true)
+      }
+      registryCompleted.callbacksFor(tmpDirPath).size should be(1)
+    }
+
   }
 
   describe("#withoutCallbacksFor") {

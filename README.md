@@ -112,11 +112,11 @@ writer.close
 
 ### RxScala
 
-There is another way to monitor files, which is to use Rx Observables.
+There is another way to monitor files supported by this library: via Rx Observables.
 
 This is neat because it allows you to treat notifications for files as, well, an Observable,
 which conceptually is like a Stream, or a Go channel. You can filter on the stream, map on it,
-and basically compose it as you would a normal observable.
+filter on it ... basically compose it as you would a normal observable.
 
 
 ```scala

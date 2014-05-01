@@ -97,17 +97,11 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
     case RegisterBossyCallback(event, modifier, recursive, path, callback) => {
       // Ensure that only absolute paths are used
       val absolutePath = path.toAbsolutePath
-      // Generate a map without the specific path requested
-      val withoutPathRegistryMap = newCallbackRegistryMap(
-        currentCallbackRegistryMap,
-        event,
-        _ withoutCallbacksFor(absolutePath, recursive)
-      )
       // Generate a map with the specific path requested
       val withNewPathRegistryMap = newCallbackRegistryMap(
-        withoutPathRegistryMap,
+        currentCallbackRegistryMap,
         event,
-        _ withCallbackFor(absolutePath, callback, recursive)
+        _ withCallbackFor(absolutePath, callback, recursive, true)
       )
       addPathToWatchServiceTask(event, modifier, absolutePath, recursive)
       context.become(withCallbackRegistryMap(withNewPathRegistryMap))

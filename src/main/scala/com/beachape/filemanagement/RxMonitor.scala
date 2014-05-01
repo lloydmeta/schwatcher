@@ -14,6 +14,11 @@ object RxMonitor {
 }
 
 /**
+ * The class that will be pushed out to subscribers of the RxMonitor's #observable
+ */
+sealed case class EventAtPath(path: Path, event: WatchEvent.Kind[Path])
+
+/**
  * Reactive Extensions-based class
  *
  * If you want to have a Stream of some kind
@@ -22,15 +27,22 @@ object RxMonitor {
  */
 class RxMonitor(actorSystem: ActorSystem) {
 
-  private val rxSubject = PublishSubject.create[Path]
+  private val rxSubject = PublishSubject.create[EventAtPath]
   private val monitorActor = actorSystem.actorOf(MonitorActor(concurrency = 1))
-  private val pushNextPathToSubject = { p: Path => rxSubject.onNext(p) }
+
+  /**
+   * Given an path event kind, returns a function literal that is applied with a path
+   * and pushes a EventAtPath into the rxSubject using the path amd a closure of
+   * the event kind that it was created with
+   */
+  private def pushNextPathToSubject(eventKind: WatchEvent.Kind[Path]): Function[Path, Unit] =
+    { p: Path => rxSubject.onNext(EventAtPath(p, eventKind)) }
 
   /**
    * Returns an Observable that will spew out [[Path]]s over time based on
    * what paths are registered and unregistered to this RxMonitor
    */
-  def observable(): Observable[Path] = toScalaObservable(rxSubject.asObservable())
+  def observable(): Observable[EventAtPath] = toScalaObservable(rxSubject.asObservable())
 
   /**
    * Registers a path for monitoring
@@ -46,7 +58,7 @@ class RxMonitor(actorSystem: ActorSystem) {
       modifier = modifier,
       recursive = recursive,
       path = path,
-      callback = pushNextPathToSubject)
+      callback = pushNextPathToSubject(event))
   }
 
   /**

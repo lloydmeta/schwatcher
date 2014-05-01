@@ -369,4 +369,42 @@ with PrivateMethodTester {
 
   }
 
+  describe("Register with specified modifier") {
+    it("should use specified modifier for polling event") {
+      new Fixtures {
+        val monitorActorRef2 = TestActorRef(new MonitorActor(concurrency = 1)) // should make it less temperamental
+        var start:Long = _
+        var timeLOW:Long = _
+        var timeHIGH:Long = _
+        // Execute only when `HIGH` is available
+        HIGH match {
+          case Some(_) =>
+            val registerLOW = RegisterCallback(ENTRY_MODIFY, LOW, recursive = false, tempFile.toPath,
+              path => {
+                timeLOW = System.nanoTime - start
+            })
+            val registerHIGH = RegisterCallback(ENTRY_MODIFY, HIGH, recursive = false, tempFile.toPath,
+              path => {
+                timeHIGH = System.nanoTime - start
+            })
+
+            start = System.nanoTime
+            monitorActorRef2 ! registerLOW
+            monitorActorRef2 ! registerHIGH
+            // Sleep to make sure that the Java WatchService is monitoring the file ...
+            Thread.sleep(3000)
+            val writer = new BufferedWriter(new FileWriter(tempFile))
+            writer.write("There's text in here wee!!")
+            writer.close
+            // Wait 10 seconds for finish callback
+            Thread.sleep(10000L)
+            // SensitivityWatchEventModifier.HIGH should sensitive than SensitivityWatchEventModifier.LOW
+            timeHIGH should be <= timeLOW
+          case None    => true should be (true)
+        }
+      }
+    }
+
+  }
+
 }
