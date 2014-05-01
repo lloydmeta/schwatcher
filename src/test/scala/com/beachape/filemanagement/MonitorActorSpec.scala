@@ -372,6 +372,7 @@ with PrivateMethodTester {
   describe("Register with specified modifier") {
     it("should use specified modifier for polling event") {
       new Fixtures {
+        val monitorActorRef2 = TestActorRef(new MonitorActor(concurrency = 1)) // should make it less temperamental
         var start:Long = _
         var timeLOW:Long = _
         var timeHIGH:Long = _
@@ -388,8 +389,8 @@ with PrivateMethodTester {
             })
 
             start = System.nanoTime
-            monitorActorRef ! registerLOW
-            monitorActorRef ! registerHIGH
+            monitorActorRef2 ! registerLOW
+            monitorActorRef2 ! registerHIGH
             // Sleep to make sure that the Java WatchService is monitoring the file ...
             Thread.sleep(3000)
             val writer = new BufferedWriter(new FileWriter(tempFile))

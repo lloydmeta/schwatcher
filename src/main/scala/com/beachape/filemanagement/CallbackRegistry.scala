@@ -37,10 +37,15 @@ class CallbackRegistry(pathToCallbacksMap: Map[Path, List[Callback]])
    * @param path Path (Java type) to be registered for callbacks
    * @param callback Callback function that takes a Path as a parameter and has Unit return type
    * @param recursive Boolean register the callback for each subdirectory
+   * @param bossy Boolean register this callback as the only one for this path
    * @return a new CallbackRegistry
    */
-  def withCallbackFor(path: Path, callback: Callback, recursive: Boolean = false): CallbackRegistry = {
-    val callbacks = callback :: pathToCallbacksMap.getOrElse(path, Nil)
+  def withCallbackFor(path: Path, callback: Callback, recursive: Boolean = false, bossy: Boolean = false): CallbackRegistry = {
+    val callbacks = if (bossy) {
+      List(callback)
+    } else {
+      callback :: pathToCallbacksMap.getOrElse(path, Nil)
+    }
     var callbackRegistry = CallbackRegistry(pathToCallbacksMap + (path -> callbacks))
     if (recursive) forEachDir(path) { subDir =>
       callbackRegistry = callbackRegistry.withCallbackFor(subDir, callback)
