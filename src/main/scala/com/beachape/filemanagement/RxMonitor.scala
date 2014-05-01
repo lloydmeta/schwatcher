@@ -27,8 +27,6 @@ object RxMonitor {
  *
  * Actually powered by an Actor underneath the covers because we do need to keep
  * state (in particular the CallbackRegistry).
- *
- * Created by Lloyd on 5/1/14.
  */
 class RxMonitor(actorSystem: ActorSystem) {
 
