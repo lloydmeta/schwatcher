@@ -12,9 +12,11 @@ external library/dependency like [JNotify](http://jnotify.sourceforge.net/). Unf
 that blocks in order to retrieve events from the API and does not have recursion support built-in.
 
 Schwatcher will allow you to instantiate an Akka actor, register callbacks (functions that take a Path and return Unit) to be
-fired for certain [Path](http://docs.oracle.com/javase/7/docs/api/java/nio/file/Path.html)s and [event types](http://docs.oracle.com/javase/7/docs/api/java/nio/file/StandardWatchEventKinds.html)
-by sending messages to it, then simply wait for the callbacks to be fired. The goal of Schwatcher is to facilitate the
-use of the Java7 API in Scala in a simple way that is in line with the functional programming paradigm.
+fired for certain [Path](http://docs.oracle.com/javase/7/docs/api/java/nio/file/Path.html)s and [event types](http://docs.oracle.com/javase/7/docs/api/java/nio/file/StandardWatchEventKinds.html) by sending messages to it, then simply wait for the callbacks to be
+fired. Alternatively, use the Observable interface to register for notifications on paths.
+
+The goal of Schwatcher is to facilitate the use of the Java7 API in Scala in a simple way that is in line with the functional
+programming paradigm.
 
 __As of now, only Scala versions 2.10.x and 2.11.x are supported__
 
