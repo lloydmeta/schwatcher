@@ -3,7 +3,7 @@ package com.beachape.filemanagement
 import rx.subjects.PublishSubject
 import java.nio.file.{WatchEvent, Path}
 import akka.actor.{PoisonPill, ActorSystem}
-import com.beachape.filemanagement.Messages.{UnRegisterCallback, RegisterBossyCallback}
+import com.beachape.filemanagement.Messages.{EventAtPath, UnRegisterCallback, RegisterBossyCallback}
 import java.nio.file.WatchEvent.Modifier
 import rx.lang.scala.Observable
 import rx.lang.scala.JavaConversions.toScalaObservable
@@ -21,11 +21,6 @@ object RxMonitor {
    */
   def apply(implicit actorSystem: ActorSystem = ActorSystem("actorSystem")): RxMonitor = new RxMonitor(actorSystem)
 }
-
-/**
- * The class that will be pushed out to subscribers of the RxMonitor's #observable
- */
-sealed case class EventAtPath(path: Path, event: WatchEvent.Kind[Path])
 
 /**
  * RxScala-based class that exposes the Observable interface for file monitoring
@@ -46,7 +41,7 @@ class RxMonitor(actorSystem: ActorSystem) {
    * the event kind that it was created with
    */
   private def pushNextPathToSubject(eventKind: WatchEvent.Kind[Path]): Function[Path, Unit] =
-    { p: Path => rxSubject.onNext(EventAtPath(p, eventKind)) }
+    { p: Path => rxSubject.onNext(EventAtPath(eventKind, p)) }
 
   /**
    * Returns an Observable that will spew out [[Path]]s over time based on
