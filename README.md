@@ -4,8 +4,11 @@ Schwatcher [![Build Status](https://travis-ci.org/lloydmeta/schwatcher.png?branc
 __Note__: Requires Java7 because the [WatchService API](http://docs.oracle.com/javase/7/docs/api/java/nio/file/WatchService.html)
 is an essential part of this library.
 
-__TL;DR__ A library that wraps the [WatchService API](http://docs.oracle.com/javase/7/docs/api/java/nio/file/WatchService.html)
-of Java7 and allows callbacks to be registered on both directories and files.
+__TL;DR__ A library that wraps the [WatchService API](http://docs.oracle.com/javase/7/docs/api/java/nio/file/WatchService.html).
+of Java7. You can choose to send callbacks to be registered on paths (both 
+directories and files) _or_ turn path events into a composable asynchronous
+data stream (RxScala Observable). For details, check out the Example usage section
+below.
 
 As of Java7, the WatchService API was introduced to allow developers to monitor the file system without resorting to an
 external library/dependency like [JNotify](http://jnotify.sourceforge.net/). Unfortunately, it requires you to use a loop
