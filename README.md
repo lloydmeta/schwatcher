@@ -120,6 +120,9 @@ This is neat because it allows you to treat notifications for files as, well, an
 which conceptually is like a Stream, or a Go channel. You can filter on the stream, map on it,
 filter on it ... basically compose it as you would a normal observable.
 
+Note that since RxMonitor is powered by an Akka actor under the covers, the changes to
+what you (do not) want to monitor are done in a thread-safe manner so feel free to pass
+this object around.
 
 ```scala
 import com.beachape.filemanagement.RxMonitor
