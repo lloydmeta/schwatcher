@@ -67,7 +67,7 @@ class WatchServiceTask(notifyActor: ActorRef) extends Runnable {
    *
    * @param path Path (Java7) path
    * @param modifier  Option[Modifier], the modifiers, if any, that modify how the object is registered
-   * @param eventTypes one or more WatchEvent.Kind[Path], each being one of ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE
+   * @param eventTypes one or more WatchEvent.Kind[_], each being one of ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE
    * @return Option[WatchKey] a Java7 WatchService WatchKey
    */
   def watch(path: Path, modifier: Option[Modifier], eventTypes: WatchEvent.Kind[_] *): Option[WatchKey] = {
