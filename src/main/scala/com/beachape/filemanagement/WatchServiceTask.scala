@@ -66,21 +66,21 @@ class WatchServiceTask(notifyActor: ActorRef) extends Runnable {
    * registered paths
    *
    * @param path Path (Java7) path
-   * @param eventType WatchEvent.Kind[Path], one of ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE
    * @param modifier  Option[Modifier], the modifiers, if any, that modify how the object is registered
+   * @param eventTypes one or more WatchEvent.Kind[_], each being one of ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE
    * @return Option[WatchKey] a Java7 WatchService WatchKey
    */
-  def watch(path: Path, eventType: WatchEvent.Kind[Path], modifier: Option[Modifier]): Option[WatchKey] = {
+  def watch(path: Path, modifier: Option[Modifier], eventTypes: WatchEvent.Kind[_] *): Option[WatchKey] = {
     val fileAtPath = path.toFile
     if (fileAtPath.isDirectory) {
       modifier match {
-        case Some(modifier) => Some(path.register(watchService, Array[WatchEvent.Kind[_]](eventType), modifier))
-        case None           => Some(path.register(watchService, eventType))
+        case Some(modifier) => Some(path.register(watchService, eventTypes.distinct.toArray, modifier))
+        case None           => Some(path.register(watchService, eventTypes.distinct:_*))
       }
     } else if (fileAtPath.isFile) {
       modifier match {
-        case Some(modifier) => Some(path.getParent.register(watchService, Array[WatchEvent.Kind[_]](eventType), modifier))
-        case None           => Some(path.getParent.register(watchService, eventType))
+        case Some(modifier) => Some(path.getParent.register(watchService, eventTypes.distinct.toArray, modifier))
+        case None           => Some(path.getParent.register(watchService, eventTypes.distinct:_*))
       }
     }else {
       None
