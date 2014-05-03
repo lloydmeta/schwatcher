@@ -40,13 +40,13 @@ class RxMonitor(actorSystem: ActorSystem) {
   val observable: Observable[EventAtPath] = toScalaObservable(rxSubject.asObservable())
 
   /**
-    * Given an path event kind, returns a function literal that is applied with a path
+   * Given an path event kind, returns a function literal that is applied with a path
    * and pushes a EventAtPath into the rxSubject using the path amd a closure of
    * the event kind that it was created with
    */
-  private def pushNextPathToSubject(eventKind: WatchEvent.Kind[Path]): Function[Path, Unit] =
-  { p: Path => rxSubject.onNext(EventAtPath(eventKind, p)) }
-
+  private def pushNextPathToSubject(eventKind: WatchEvent.Kind[Path]): Function[Path, Unit] = { p: Path =>
+    rxSubject.onNext(EventAtPath(eventKind, p))
+  }
 
   /**
    * Registers a path for monitoring
