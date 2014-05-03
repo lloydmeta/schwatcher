@@ -81,16 +81,13 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
     case RegisterCallback(event, modifier, recursive, path, callback) => {
       // Ensure that only absolute paths are used
       val absolutePath = path.toAbsolutePath
-      addPathToWatchServiceTask(event, modifier, absolutePath, recursive)
-      context.become(
-        withCallbackRegistryMap(
-          newCallbackRegistryMap(
-            currentCallbackRegistryMap,
-            event,
-            _ withCallbackFor(absolutePath, callback, recursive)
-          )
-        )
+      val newCallbackMap = newCallbackRegistryMap(
+        currentCallbackRegistryMap,
+        event,
+        _ withCallbackFor(absolutePath, callback, recursive)
       )
+      addPathToWatchServiceTask(newCallbackMap, modifier, absolutePath, recursive)
+      context.become(withCallbackRegistryMap(newCallbackMap))
     }
 
     // This handler actually first unregisters and then registers the given path
@@ -103,7 +100,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
         event,
         _ withCallbackFor(absolutePath, callback, recursive, true)
       )
-      addPathToWatchServiceTask(event, modifier, absolutePath, recursive)
+      addPathToWatchServiceTask(withNewPathRegistryMap, modifier, absolutePath, recursive)
       context.become(withCallbackRegistryMap(withNewPathRegistryMap))
     }
 
@@ -159,16 +156,20 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
    * Adds a path to be monitored by the WatchServiceTask. If specified, all
    * subdirectories will be recursively added to the WatchServiceTask.
    *
-   * @param eventType WatchEvent.Kind[Path] Java7 Event type
+   * @param cbRegistryMap the current CallbackRegistryMap
    * @param recursive Boolean watch subdirectories of the given path
    * @param path Path (Java type) to be registered
    */
-  private[this] def addPathToWatchServiceTask(eventType: WatchEvent.Kind[Path], modifier: Option[Modifier], path: Path, recursive: Boolean = false) {
+  private[this] def addPathToWatchServiceTask(cbRegistryMap: CallbackRegistryMap, modifier: Option[Modifier], path: Path, recursive: Boolean = false) {
     log.debug(s"Adding $path to WatchServiceTask")
-    watchServiceTask.watch(path, eventType, modifier)
+    val eventTypes = (for {
+      (eventType, registry) <- cbRegistryMap
+      if registry.callbacksFor(path).isDefined
+    } yield eventType).toSeq
+    watchServiceTask.watch(path, modifier, eventTypes:_*)
     if (recursive) forEachDir(path) { subDir =>
       log.debug(s"Adding $subDir to WatchServiceTask")
-      watchServiceTask.watch(subDir, eventType, modifier)
+      watchServiceTask.watch(subDir, modifier, eventTypes:_*)
     }
   }
 
