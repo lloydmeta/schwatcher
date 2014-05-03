@@ -14,7 +14,7 @@ class RxMonitorSpec extends FunSpec with Matchers with PrivateMethodTester with 
     val tempDirPath = Files.createTempDirectory("root")
     val pushNextPathToSubject = PrivateMethod[Function[Path, Unit]]('pushNextPathToSubject)
     val monitor = RxMonitor()
-    val observable = monitor.observable()
+    val observable = monitor.observable
     val nextP = Promise[EventAtPath]
     val nextF = nextP.future
     val doneP = Promise[Boolean]
@@ -41,7 +41,7 @@ class RxMonitorSpec extends FunSpec with Matchers with PrivateMethodTester with 
   describe("private method pushNextPathToSubject") {
     it("should return a function that will push EventAtPaths to the RxMonitor's observable") { new Context {
       val func = monitor invokePrivate pushNextPathToSubject(ENTRY_MODIFY)
-      monitor.observable().subscribe(observer)
+      observable.subscribe(observer)
       func(tempDirPath)
       whenReady(nextF){ _ should be(EventAtPath(ENTRY_MODIFY, tempDirPath)) }
     }}
