@@ -5,7 +5,7 @@ __Note__: Requires Java7 because the [WatchService API](http://docs.oracle.com/j
 is an essential part of this library.
 
 __TL;DR__ A library that wraps the [WatchService API](http://docs.oracle.com/javase/7/docs/api/java/nio/file/WatchService.html).
-of Java7. You can choose to send callbacks to be registered on paths (both 
+of Java7. You can choose to send callbacks to be registered on paths (both
 directories and files) _or_ turn path events into a composable asynchronous
 data stream (RxScala Observable). For details, check out the Example usage section
 below.
@@ -29,7 +29,7 @@ Installation
 Add the following to your `build.sbt`
 
 ```scala
-libraryDependencies += "com.beachape.filemanagement" %% "schwatcher" % "0.1.2"
+libraryDependencies += "com.beachape.filemanagement" %% "schwatcher" % "0.1.4"
 ```
 
 If the above does not work because it cannot be resolved, its likely because it hasn't been synced to Maven central yet.
@@ -38,7 +38,7 @@ In that case, download a SNAPSHOT release of the same version by adding this to 
 ```
 resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 
-libraryDependencies += "com.beachape.filemanagement" %% "schwatcher" % "0.1.2-SNAPSHOT"
+libraryDependencies += "com.beachape.filemanagement" %% "schwatcher" % "0.1.4-SNAPSHOT"
 ```
 
 __Those using Akka 2.1.x__ should stay on 0.0.2 as 0.0.3 onwards uses Akka 2.2.x, which [requires some work to upgrade to](http://doc.akka.io/docs/akka/current/project/migration-guide-2.1.x-2.2.x.html).
