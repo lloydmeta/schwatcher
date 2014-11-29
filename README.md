@@ -191,7 +191,7 @@ Contributors
 - [Crdueck](https://github.com/crdueck)
 - [georgeOsdDev](https://github.com/georgeOsdDev)
 
-IDE Sponser
+IDE Sponsor
 -----------
 
 Jetbrains sponsors this project through their Open Source IntelliJ licence, which has been an immensely helpful tool for
