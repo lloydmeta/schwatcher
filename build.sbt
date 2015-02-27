@@ -1,6 +1,6 @@
 name := "schwatcher"
 
-version := "0.1.6"
+version := "0.1.6-SNAPSHOT"
 
 scalaVersion := "2.11.5"
 
@@ -50,7 +50,7 @@ pomExtra := (
     <developer>
       <id>lloydmeta</id>
       <name>Lloyd Chan</name>
-      <url>http://beachape.com</url>
+      <url>https://beachape.com</url>
     </developer>
   </developers>
 )
