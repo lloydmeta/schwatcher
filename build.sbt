@@ -1,20 +1,20 @@
 name := "schwatcher"
 
-version := "0.1.5"
+version := "0.1.6"
 
-scalaVersion := "2.11.0"
+scalaVersion := "2.11.5"
 
-crossScalaVersions := Seq("2.10.4", "2.11.0")
+crossScalaVersions := Seq("2.10.4", "2.11.5")
 
 crossVersion := CrossVersion.binary
 
 resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
 
 libraryDependencies ++= Seq(
-  "org.scalatest" %% "scalatest" % "2.1.3" % "test",
-  "com.typesafe.akka" %% "akka-testkit" % "2.3.2" % "test",
-  "com.typesafe.akka" %% "akka-actor" % "2.3.2",
-  "com.netflix.rxjava" % "rxjava-scala" % "0.18.1"
+  "org.scalatest" %% "scalatest" % "2.2.4" % "test",
+  "com.typesafe.akka" %% "akka-testkit" % "2.3.9" % "test",
+  "com.typesafe.akka" %% "akka-actor" % "2.3.9",
+  "io.reactivex" % "rxscala_2.11" % "0.23.1"
 )
 
 publishTo <<= version { v: String =>
