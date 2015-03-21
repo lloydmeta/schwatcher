@@ -1,6 +1,8 @@
 package com.beachape.filemanagement
 
-import org.scalatest.{PrivateMethodTester, Matchers, FunSpec}
+import akka.actor.ActorSystem
+import akka.testkit.TestKit
+import org.scalatest.{PrivateMethodTester, Matchers, FunSpecLike}
 import java.nio.file.{Files, Path}
 import rx.lang.scala.Observer
 import com.beachape.filemanagement.Messages.EventAtPath
@@ -8,7 +10,7 @@ import scala.concurrent.Promise
 import org.scalatest.concurrent.ScalaFutures
 import java.nio.file.StandardWatchEventKinds._
 
-class RxMonitorSpec extends FunSpec with Matchers with PrivateMethodTester with ScalaFutures {
+class RxMonitorSpec extends TestKit(ActorSystem("testSystem")) with FunSpecLike with Matchers with PrivateMethodTester with ScalaFutures {
 
   trait Context {
     val tempDirPath = Files.createTempDirectory("root")
