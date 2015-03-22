@@ -16,10 +16,10 @@ object RxMonitor {
   /**
    * Returns an RxMonitor instance
    *
-   * @param actorSystem implicit parameter for an Actor system. Defaults to one called "actorSystem"
+   * @param actorSystem implicit parameter for an Actor system.
    * @return
    */
-  def apply(implicit actorSystem: ActorSystem = ActorSystem("actorSystem")): RxMonitor = new RxMonitor(actorSystem)
+  def apply()(implicit actorSystem: ActorSystem): RxMonitor = new RxMonitor(actorSystem)
 }
 
 /**
