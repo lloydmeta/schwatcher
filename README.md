@@ -1,4 +1,4 @@
-Schwatcher [![Build Status](https://travis-ci.org/lloydmeta/schwatcher.png?branch=master)](https://travis-ci.org/lloydmeta/schwatcher)
+Schwatcher [![Build Status](https://travis-ci.org/lloydmeta/schwatcher.svg?branch=master)](https://travis-ci.org/lloydmeta/schwatcher)
 ==========
 
 __Note__: Requires Java7 because the [WatchService API](http://docs.oracle.com/javase/7/docs/api/java/nio/file/WatchService.html)
