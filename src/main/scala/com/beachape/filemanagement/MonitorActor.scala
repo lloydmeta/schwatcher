@@ -197,8 +197,12 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
     }
 
     processCallbacks(path)
-    // If event is ENTRY_DELETE or the path is a file, check for callbacks that
-    // need to be fired for the directory the file is in
-    if (event == ENTRY_DELETE || path.toFile.isFile) processCallbacks(path.getParent)
+
+    /*
+      If event is ENTRY_DELETE or ENTRY_CREATE or the path is a file, check for callbacks that
+      need to be fired for the directory the file is in
+    */
+    if (event == ENTRY_DELETE || event == ENTRY_CREATE || path.toFile.isFile)
+      processCallbacks(path.getParent)
   }
 }
