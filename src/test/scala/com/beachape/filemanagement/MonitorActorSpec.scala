@@ -8,7 +8,7 @@ import java.nio.file.StandardWatchEventKinds._
 import java.nio.file.{Files, Path, WatchEvent}
 import java.nio.file.WatchEvent.Modifier
 import org.scalatest._
-import java.io.{FileWriter, BufferedWriter}
+import java.io.{File, FileWriter, BufferedWriter}
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 import scala.language.postfixOps
@@ -356,13 +356,29 @@ with PrivateMethodTester {
           path => testActor ! s"Modified file is at $path")
         monitorActorRef ! register
         // Sleep to make sure that the Java WatchService is monitoring the file ...
-        Thread.sleep(3000)
+        Thread.sleep(1000)
         val writer = new BufferedWriter(new FileWriter(tempFile))
         writer.write("There's text in here wee!!")
         writer.close
         // Within 60 seconds is used in case the Java WatchService is acting slow ...
         within(60 seconds) {
           expectMsg(s"Modified file is at ${tempFile.toPath}")
+        }
+      }
+    }
+
+    it("should fire the appropriate callback if a monitored directory has a directory created inside of it") {
+      new Fixtures {
+        val register = RegisterCallback(ENTRY_CREATE, None, recursive = false, tempDirPath,
+          path => testActor ! s"New thing at $path")
+        monitorActorRef ! register
+        // Sleep to make sure that the Java WatchService is monitoring the file ...
+        Thread.sleep(1000)
+        val newDir = new File(s"${tempDirPath.toAbsolutePath}/a-new-dir")
+        newDir.mkdir()
+        // Within 60 seconds is used in case the Java WatchService is acting slow ...
+        within(60 seconds) {
+          expectMsg(s"New thing at ${newDir.toPath}")
         }
       }
     }
