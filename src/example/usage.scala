@@ -26,6 +26,7 @@ val desktopFile = Paths get "/Users/lloyd/Desktop/test"
  */
 fileMonitorActor ! RegisterCallback(
   ENTRY_MODIFY,
+  modifier = None,
   recursive = false,
   path = desktopFile,
   modifyCallbackFile)
@@ -36,6 +37,7 @@ fileMonitorActor ! RegisterCallback(
 */
 fileMonitorActor ! RegisterCallback(
   ENTRY_MODIFY,
+  modifier = None,
   recursive = false,
   path = desktop,
   modifyCallbackDirectory)
