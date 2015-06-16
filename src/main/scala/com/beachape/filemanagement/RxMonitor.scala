@@ -1,9 +1,9 @@
 package com.beachape.filemanagement
 
 import rx.subjects.PublishSubject
-import java.nio.file.{WatchEvent, Path}
-import akka.actor.{PoisonPill, ActorSystem}
-import com.beachape.filemanagement.Messages.{EventAtPath, UnRegisterCallback, RegisterBossyCallback}
+import java.nio.file.{ WatchEvent, Path }
+import akka.actor.{ PoisonPill, ActorSystem }
+import com.beachape.filemanagement.Messages.{ EventAtPath, UnRegisterCallback, RegisterBossyCallback }
 import java.nio.file.WatchEvent.Modifier
 import rx.lang.scala.Observable
 import rx.lang.scala.JavaConversions.toScalaObservable
@@ -53,16 +53,19 @@ class RxMonitor(actorSystem: ActorSystem) {
    *
    * Note that this is an asynchronous operation
    */
-  def registerPath(event: WatchEvent.Kind[Path],
-                   path: Path,
-                   recursive: Boolean = false,
-                   modifier: Option[Modifier] = None) {
+  def registerPath(
+    event: WatchEvent.Kind[Path],
+    path: Path,
+    recursive: Boolean = false,
+    modifier: Option[Modifier] = None
+  ) {
     monitorActor ! RegisterBossyCallback(
       event = event,
       modifier = modifier,
       recursive = recursive,
       path = path,
-      callback = pushNextPathToSubject(event))
+      callback = pushNextPathToSubject(event)
+    )
   }
 
   /**
@@ -70,14 +73,17 @@ class RxMonitor(actorSystem: ActorSystem) {
    *
    * Note that this is an asynchronous operation
    */
-  def unregisterPath(event: WatchEvent.Kind[Path],
-                     path: Path,
-                     recursive: Boolean = false,
-                     modifier: Option[Modifier] = None) {
+  def unregisterPath(
+    event: WatchEvent.Kind[Path],
+    path: Path,
+    recursive: Boolean = false,
+    modifier: Option[Modifier] = None
+  ) {
     monitorActor ! UnRegisterCallback(
       event = event,
       recursive = recursive,
-      path = path)
+      path = path
+    )
   }
 
   /**

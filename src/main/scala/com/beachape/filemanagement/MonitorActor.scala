@@ -1,11 +1,11 @@
 package com.beachape.filemanagement
 
-import akka.actor.{ActorLogging, Actor, Props}
-import akka.routing.{SmallestMailboxPool, DefaultResizer}
+import akka.actor.{ ActorLogging, Actor, Props }
+import akka.routing.{ SmallestMailboxPool, DefaultResizer }
 import com.beachape.filemanagement.Messages._
 import com.beachape.filemanagement.RegistryTypes.Callbacks
 import java.nio.file.StandardWatchEventKinds._
-import java.nio.file.{Path, WatchEvent}
+import java.nio.file.{ Path, WatchEvent }
 import java.nio.file.WatchEvent.Modifier
 
 /**
@@ -28,7 +28,8 @@ object MonitorActor {
   val initialEventTypeCallbackRegistryMap = Map(
     ENTRY_CREATE -> CallbackRegistry(),
     ENTRY_MODIFY -> CallbackRegistry(),
-    ENTRY_DELETE -> CallbackRegistry())
+    ENTRY_DELETE -> CallbackRegistry()
+  )
 }
 
 /**
@@ -45,10 +46,10 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
   private[this] val callbackActors = context.actorOf(
     SmallestMailboxPool(
       concurrency,
-       resizer = Some(DefaultResizer(lowerBound = concurrency, upperBound = concurrency + 1))
-      ).props(CallbackActor()),
+      resizer = Some(DefaultResizer(lowerBound = concurrency, upperBound = concurrency + 1))
+    ).props(CallbackActor()),
     "callbackActors"
-    )
+  )
 
   private[this] val monitorActor = self
   private[this] val watchServiceTask = new WatchServiceTask(monitorActor)
@@ -84,7 +85,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
       val newCallbackMap = newCallbackRegistryMap(
         currentCallbackRegistryMap,
         event,
-        _ withCallbackFor(absolutePath, callback, recursive)
+        _ withCallbackFor (absolutePath, callback, recursive)
       )
       addPathToWatchServiceTask(newCallbackMap, modifier, absolutePath, recursive)
       context.become(withCallbackRegistryMap(newCallbackMap))
@@ -98,7 +99,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
       val withNewPathRegistryMap = newCallbackRegistryMap(
         currentCallbackRegistryMap,
         event,
-        _ withCallbackFor(absolutePath, callback, recursive, true)
+        _ withCallbackFor (absolutePath, callback, recursive, true)
       )
       addPathToWatchServiceTask(withNewPathRegistryMap, modifier, absolutePath, recursive)
       context.become(withCallbackRegistryMap(withNewPathRegistryMap))
@@ -112,7 +113,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
           newCallbackRegistryMap(
             currentCallbackRegistryMap,
             event,
-            _ withoutCallbacksFor(absolutePath, recursive)
+            _ withoutCallbacksFor (absolutePath, recursive)
           )
         )
       )
@@ -128,9 +129,11 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
    * @param modify a function to update the CallbackRegistry
    * @return Map[WatchEvent.Kind[Path], CallbackRegistry]
    */
-  private[this] def newCallbackRegistryMap( cbRegistryMap: CallbackRegistryMap,
-                                            eventType: WatchEvent.Kind[Path],
-                                            modify: CallbackRegistry => CallbackRegistry): CallbackRegistryMap = {
+  private[this] def newCallbackRegistryMap(
+    cbRegistryMap: CallbackRegistryMap,
+    eventType: WatchEvent.Kind[Path],
+    modify: CallbackRegistry => CallbackRegistry
+  ): CallbackRegistryMap = {
     if (!cbRegistryMap.isDefinedAt(eventType))
       cbRegistryMap
     else {
@@ -146,10 +149,12 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
    * @param path Path (Java type) to be registered
    * @return Option[Callbacks] for the path at the event type (Option[List[Path => Unit]])
    */
-  def callbacksFor(cbRegistryMap: CallbackRegistryMap,
-                   eventType: WatchEvent.Kind[Path],
-                   path: Path): Option[Callbacks] = {
-    cbRegistryMap.get(eventType) flatMap { _ callbacksFor(path) }
+  def callbacksFor(
+    cbRegistryMap: CallbackRegistryMap,
+    eventType: WatchEvent.Kind[Path],
+    path: Path
+  ): Option[Callbacks] = {
+    cbRegistryMap.get(eventType) flatMap { _ callbacksFor (path) }
   }
 
   /**
@@ -166,10 +171,10 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
       (eventType, registry) <- cbRegistryMap
       if registry.callbacksFor(path).isDefined
     } yield eventType).toSeq
-    watchServiceTask.watch(path, modifier, eventTypes:_*)
+    watchServiceTask.watch(path, modifier, eventTypes: _*)
     if (recursive) forEachDir(path) { subDir =>
       log.debug(s"Adding $subDir to WatchServiceTask")
-      watchServiceTask.watch(subDir, modifier, eventTypes:_*)
+      watchServiceTask.watch(subDir, modifier, eventTypes: _*)
     }
   }
 
@@ -182,14 +187,15 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
    * @return Unit
    */
   def processCallbacksFor(
-                           cbRegistryMap: CallbackRegistryMap,
-                           event: WatchEvent.Kind[Path],
-                           path: Path): Unit = {
+    cbRegistryMap: CallbackRegistryMap,
+    event: WatchEvent.Kind[Path],
+    path: Path
+  ): Unit = {
 
     def processCallbacks(lookupPath: Path): Unit = {
       for {
         callbacks <- callbacksFor(cbRegistryMap, event, lookupPath)
-        callback  <- callbacks
+        callback <- callbacks
       } {
         log.debug(s"Sending callback for path: $path")
         callbackActors ! PerformCallback(path, callback)
