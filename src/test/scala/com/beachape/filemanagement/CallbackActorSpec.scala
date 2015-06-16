@@ -1,28 +1,28 @@
 package com.beachape.filemanagement
 
 import akka.actor._
-import akka.testkit.{ImplicitSender, TestKit}
+import akka.testkit.{ ImplicitSender, TestKit }
 import com.beachape.filemanagement.Messages.PerformCallback
 import com.beachape.filemanagement.RegistryTypes._
 import java.nio.file.Paths
 import org.scalatest._
-import scala.concurrent.{ExecutionContext, Promise}
+import scala.concurrent.{ ExecutionContext, Promise }
 import ExecutionContext.Implicits.global
 import scala.concurrent.Promise
 import scala.util.Success
 
 class CallbackActorSpec extends TestKit(ActorSystem("testSystem"))
-  with FunSpecLike
-  with Matchers
-  with BeforeAndAfter
-  with ImplicitSender {
+    with FunSpecLike
+    with Matchers
+    with BeforeAndAfter
+    with ImplicitSender {
 
   val callbackActor = system.actorOf(CallbackActor())
   val tmpDirPath = Paths get System.getProperty("java.io.tmpdir")
 
   trait Fixtures {
     val p = Promise[Int]()
-    val dummyFunction: Callback = { path => p.success(1)}
+    val dummyFunction: Callback = { path => p.success(1) }
     val dummySendFunction: Callback = { path => testActor ! "Up yours!" }
   }
 

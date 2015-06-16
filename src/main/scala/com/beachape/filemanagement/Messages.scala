@@ -1,7 +1,7 @@
 package com.beachape.filemanagement
 
 import com.beachape.filemanagement.RegistryTypes._
-import java.nio.file.{Path, WatchEvent}
+import java.nio.file.{ Path, WatchEvent }
 import java.nio.file.WatchEvent.Modifier
 import scala.language.existentials
 
@@ -10,7 +10,7 @@ import scala.language.existentials
  *  between actors safer and easier
  */
 
-object Messages{
+object Messages {
   /**
    * Message case class for telling a MonitorActor that an
    * event has happened and at what path
@@ -30,11 +30,12 @@ object Messages{
    * @param callback (Path) => Unit type function
    */
   sealed case class RegisterCallback(
-                                      event: WatchEvent.Kind[Path],
-                                      modifier: Option[Modifier] = None,
-                                      recursive: Boolean = false,
-                                      path: Path,
-                                      callback: Callback)
+    event: WatchEvent.Kind[Path],
+    modifier: Option[Modifier] = None,
+    recursive: Boolean = false,
+    path: Path,
+    callback: Callback
+  )
 
   /**
    * Message case class for telling a MonitorActor that the callback contained
@@ -48,12 +49,12 @@ object Messages{
    * @param callback (Path) => Unit type function
    */
   sealed case class RegisterBossyCallback(
-                                           event: WatchEvent.Kind[Path],
-                                           modifier: Option[Modifier] = None,
-                                           recursive: Boolean = false,
-                                           path: Path,
-                                           callback: Callback
-                                           )
+    event: WatchEvent.Kind[Path],
+    modifier: Option[Modifier] = None,
+    recursive: Boolean = false,
+    path: Path,
+    callback: Callback
+  )
 
   /**
    * Message case class for telling a MonitorActor to un-register a
@@ -69,9 +70,10 @@ object Messages{
    * @param path Path (Java object) pointing to a file/directory
    */
   sealed case class UnRegisterCallback(
-                                        event: WatchEvent.Kind[Path],
-                                        recursive: Boolean = false,
-                                        path: Path)
+    event: WatchEvent.Kind[Path],
+    recursive: Boolean = false,
+    path: Path
+  )
 
   /**
    * Message case class for telling a CallbackActor to perform a callback

@@ -1,25 +1,25 @@
 package com.beachape.filemanagement
 
 import akka.actor.ActorSystem
-import akka.testkit.{ImplicitSender, TestActorRef, TestKit}
+import akka.testkit.{ ImplicitSender, TestActorRef, TestKit }
 import com.beachape.filemanagement.Messages._
 import com.beachape.filemanagement.RegistryTypes.Callback
 import java.nio.file.StandardWatchEventKinds._
-import java.nio.file.{Files, Path, WatchEvent}
+import java.nio.file.{ Files, Path, WatchEvent }
 import java.nio.file.WatchEvent.Modifier
 import org.scalatest._
-import java.io.{File, FileWriter, BufferedWriter}
+import java.io.{ File, FileWriter, BufferedWriter }
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 import scala.language.postfixOps
 import com.beachape.filemanagement.MonitorActor.CallbackRegistryMap
 
 class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
-with FunSpecLike
-with Matchers
-with BeforeAndAfter
-with ImplicitSender
-with PrivateMethodTester {
+    with FunSpecLike
+    with Matchers
+    with BeforeAndAfter
+    with ImplicitSender
+    with PrivateMethodTester {
 
   trait Fixtures {
     val emptyCbMap = MonitorActor.initialEventTypeCallbackRegistryMap
@@ -48,44 +48,52 @@ with PrivateMethodTester {
     val newRegistryMap = PrivateMethod[CallbackRegistryMap]('newCallbackRegistryMap)
 
     val HIGH = get_com_sun_nio_file_SensitivityWatchEventModifier("HIGH")
-    val LOW  = get_com_sun_nio_file_SensitivityWatchEventModifier("LOW")
+    val LOW = get_com_sun_nio_file_SensitivityWatchEventModifier("LOW")
 
     // Test helper methods
-    def addCallbackFor(originalMap: CallbackRegistryMap,
-                       path: Path,
-                       event: WatchEvent.Kind[Path],
-                       callback: Callback,
-                       recursive: Boolean = false): CallbackRegistryMap = {
+    def addCallbackFor(
+      originalMap: CallbackRegistryMap,
+      path: Path,
+      event: WatchEvent.Kind[Path],
+      callback: Callback,
+      recursive: Boolean = false
+    ): CallbackRegistryMap = {
       val absolutePath = path.toAbsolutePath
       monitorActor invokePrivate newRegistryMap(
-      originalMap,
-      event, {
+        originalMap,
+        event, {
         registry: CallbackRegistry => registry.withCallbackFor(absolutePath, callback, recursive)
-      })
+      }
+      )
     }
 
-    def removeCallbacksFor(originalMap: CallbackRegistryMap,
-                           path: Path,
-                           event: WatchEvent.Kind[Path],
-                           recursive: Boolean = false): CallbackRegistryMap = {
+    def removeCallbacksFor(
+      originalMap: CallbackRegistryMap,
+      path: Path,
+      event: WatchEvent.Kind[Path],
+      recursive: Boolean = false
+    ): CallbackRegistryMap = {
       val absolutePath = path.toAbsolutePath
       monitorActor invokePrivate newRegistryMap(
-      originalMap,
-      event, {
+        originalMap,
+        event, {
         registry: CallbackRegistry => registry.withoutCallbacksFor(absolutePath, recursive)
-      })
+      }
+      )
     }
 
     // Recursive version of the same as above
-    def addCallbackFor(originalMap: CallbackRegistryMap,
-                       pathsCallbackRecursive: List[(Path, WatchEvent.Kind[Path], Callback, Boolean)]): CallbackRegistryMap = {
+    def addCallbackFor(
+      originalMap: CallbackRegistryMap,
+      pathsCallbackRecursive: List[(Path, WatchEvent.Kind[Path], Callback, Boolean)]
+    ): CallbackRegistryMap = {
       pathsCallbackRecursive.foldLeft(originalMap) {
         case (memo, (path, eventType, callback, recursive)) => addCallbackFor(memo, path, eventType, callback, recursive)
       }
     }
 
     // Load `com.sun.nio.file.SensitivityWatchEventModifie._` if possible
-    private def get_com_sun_nio_file_SensitivityWatchEventModifier(field:String): Option[Modifier] = {
+    private def get_com_sun_nio_file_SensitivityWatchEventModifier(field: String): Option[Modifier] = {
       try {
         val c = Class.forName("com.sun.nio.file.SensitivityWatchEventModifier")
         val f = c.getField(field)
@@ -118,7 +126,6 @@ with PrivateMethodTester {
       TestActorRef(MonitorActor(1))
       true should be(true)
     }
-
 
     it("should not throw an error when concurrency parameter is set to > 1") {
       TestActorRef(MonitorActor(2))
@@ -185,7 +192,6 @@ with PrivateMethodTester {
 
     describe("recursively removing callbacks") {
 
-
       it("should remove callbacks for all folders that exist under the path given") {
         new Fixtures {
           val addedMap = addCallbackFor(emptyCbMap, tempDirPath, ENTRY_CREATE, dummyFunction, true)
@@ -206,7 +212,6 @@ with PrivateMethodTester {
     }
 
     describe("#callbacksFor") {
-
 
       it("should return Some[Callbacks] that contains prior registered callbacks for a path") {
         new Fixtures {
@@ -389,20 +394,20 @@ with PrivateMethodTester {
     it("should use specified modifier for polling event") {
       new Fixtures {
         val monitorActorRef2 = TestActorRef(new MonitorActor(concurrency = 1)) // should make it less temperamental
-        var start:Long = _
-        var timeLOW:Long = _
-        var timeHIGH:Long = _
+        var start: Long = _
+        var timeLOW: Long = _
+        var timeHIGH: Long = _
         // Execute only when `HIGH` is available
         HIGH match {
           case Some(_) =>
             val registerLOW = RegisterCallback(ENTRY_MODIFY, LOW, recursive = false, tempFile.toPath,
               path => {
                 timeLOW = System.nanoTime - start
-            })
+              })
             val registerHIGH = RegisterCallback(ENTRY_MODIFY, HIGH, recursive = false, tempFile.toPath,
               path => {
                 timeHIGH = System.nanoTime - start
-            })
+              })
 
             start = System.nanoTime
             monitorActorRef2 ! registerLOW
@@ -416,7 +421,7 @@ with PrivateMethodTester {
             Thread.sleep(10000L)
             // SensitivityWatchEventModifier.HIGH should sensitive than SensitivityWatchEventModifier.LOW
             timeHIGH should be <= timeLOW
-          case None    => true should be (true)
+          case None => true should be(true)
         }
       }
     }

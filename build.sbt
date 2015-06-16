@@ -33,6 +33,8 @@ publishArtifact in Test := false
 
 pomIncludeRepository := { _ => false }
 
+scalariformSettings
+
 pomExtra := (
   <url>https://github.com/lloydmeta/schwatcher</url>
   <licenses>

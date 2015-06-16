@@ -1,15 +1,14 @@
 package com.beachape.filemanagement
 
-import java.nio.file.{Path, Paths, Files}
+import java.nio.file.{ Path, Paths, Files }
 import org.scalatest._
 
-
 class CallbackRegistrySpec extends FunSpec
-  with PrivateMethodTester
-  with Matchers
-  with BeforeAndAfter {
+    with PrivateMethodTester
+    with Matchers
+    with BeforeAndAfter {
 
-  val dummyFunction: Path => Unit = { (path: Path) =>  val bleh = "lala"}
+  val dummyFunction: Path => Unit = { (path: Path) => val bleh = "lala" }
 
   describe("companion factory object") {
 
@@ -42,13 +41,13 @@ class CallbackRegistrySpec extends FunSpec
 
     it("should be chainable and allow different callbacks to be registered for the same path ") {
       val callback1 = { (path: Path) =>
-          val test = 1 + 1
+        val test = 1 + 1
       }
       val callback2 = { (path: Path) =>
-          val test = 1 + 2
+        val test = 1 + 2
       }
       val callback3 = { (path: Path) =>
-          val test = 1 + 3
+        val test = 1 + 3
       }
       val newRegistry = registry.withCallbackFor(tmpDirPath, callback1).
         withCallbackFor(tmpDirPath, callback2).
@@ -58,7 +57,7 @@ class CallbackRegistrySpec extends FunSpec
 
     it("should obey the bossy argument and register only 1 callback for a path passed multiple times") {
       val pathsWithCallbacks = Stream.fill(100)((tmpDirPath, callback))
-      val registryCompleted = pathsWithCallbacks.foldLeft(registry){ (acc, pC) =>
+      val registryCompleted = pathsWithCallbacks.foldLeft(registry) { (acc, pC) =>
         val (path, callback) = pC
         acc.withCallbackFor(path, callback, bossy = true)
       }
@@ -80,7 +79,7 @@ class CallbackRegistrySpec extends FunSpec
 
     it("should return a CallbackRegistry that does not callbacks for the path passed in") {
       val newRegistry = registry.withoutCallbacksFor(tmpDirPath)
-      newRegistry.callbacksFor(tmpDirPath).isEmpty should be (true)
+      newRegistry.callbacksFor(tmpDirPath).isEmpty should be(true)
     }
 
     it("should return a CallbackRegistry without raising an exception even if the path was never registered in the first place") {
@@ -107,21 +106,21 @@ class CallbackRegistrySpec extends FunSpec
 
       it("should add callbacks for all folders that exist under the path given") {
         registryWithRecursive.callbacksFor(tempDirLevel1Path).map(callbacks =>
-          callbacks should contain (dummyFunction))
+          callbacks should contain(dummyFunction))
         registryWithRecursive.callbacksFor(tempDirLevel2Path).map(callbacks =>
-          callbacks should contain (dummyFunction))
+          callbacks should contain(dummyFunction))
       }
 
       it("should add callbacks for a file path") {
         val registry = CallbackRegistry().withCallbackFor(tempFileInTempDir, dummyFunction, true)
         registry.callbacksFor(tempFileInTempDir).map(callbacks =>
-          callbacks should contain (dummyFunction))
+          callbacks should contain(dummyFunction))
       }
 
       it("should not add callbacks recursively if given a file path") {
         val registry = CallbackRegistry().withCallbackFor(tempFileInTempDir, dummyFunction, true)
         registry.callbacksFor(tempFileInTempDir).map(callbacks =>
-          callbacks should contain (dummyFunction))
+          callbacks should contain(dummyFunction))
         registry.callbacksFor(tempDirLevel1Path).map(callbacks =>
           callbacks should not contain dummyFunction)
         registry.callbacksFor(tempDirLevel2Path).map(callbacks =>
@@ -199,7 +198,7 @@ class CallbackRegistrySpec extends FunSpec
       } {
         callback(tmpDirPath)
       }
-      sum should be (6)
+      sum should be(6)
     }
   }
 }

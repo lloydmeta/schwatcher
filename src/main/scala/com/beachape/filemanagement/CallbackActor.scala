@@ -1,6 +1,6 @@
 package com.beachape.filemanagement
 
-import akka.actor.{ActorLogging, Actor, Props}
+import akka.actor.{ ActorLogging, Actor, Props }
 import com.beachape.filemanagement.Messages.PerformCallback
 
 /**

@@ -4,9 +4,8 @@ import akka.actor.ActorRef
 import collection.JavaConversions._
 import com.beachape.filemanagement.Messages.EventAtPath
 import java.nio.file.StandardWatchEventKinds._
-import java.nio.file.{WatchKey, WatchEvent, Path, FileSystems}
+import java.nio.file.{ WatchKey, WatchEvent, Path, FileSystems }
 import java.nio.file.WatchEvent.Modifier
-
 
 /**
  * Companion object for factory method
@@ -70,19 +69,19 @@ class WatchServiceTask(notifyActor: ActorRef) extends Runnable {
    * @param eventTypes one or more WatchEvent.Kind[_], each being one of ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE
    * @return Option[WatchKey] a Java7 WatchService WatchKey
    */
-  def watch(path: Path, modifier: Option[Modifier], eventTypes: WatchEvent.Kind[_] *): Option[WatchKey] = {
+  def watch(path: Path, modifier: Option[Modifier], eventTypes: WatchEvent.Kind[_]*): Option[WatchKey] = {
     val fileAtPath = path.toFile
     if (fileAtPath.isDirectory) {
       modifier match {
         case Some(modifier) => Some(path.register(watchService, eventTypes.distinct.toArray, modifier))
-        case None           => Some(path.register(watchService, eventTypes.distinct:_*))
+        case None => Some(path.register(watchService, eventTypes.distinct: _*))
       }
     } else if (fileAtPath.isFile) {
       modifier match {
         case Some(modifier) => Some(path.getParent.register(watchService, eventTypes.distinct.toArray, modifier))
-        case None           => Some(path.getParent.register(watchService, eventTypes.distinct:_*))
+        case None => Some(path.getParent.register(watchService, eventTypes.distinct: _*))
       }
-    }else {
+    } else {
       None
     }
   }
