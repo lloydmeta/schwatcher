@@ -355,6 +355,22 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
 
   describe("integration testing") {
 
+    it("should fire the appropriate callback if a monitored directory has a directory created inside of it") {
+      new Fixtures {
+        val register = RegisterCallback(ENTRY_CREATE, None, recursive = false, tempDirPath,
+          path => testActor ! s"New thing at $path")
+        monitorActorRef ! register
+        // Sleep to make sure that the Java WatchService is monitoring the file ...
+        Thread.sleep(1000)
+        val newDir = new File(s"${tempDirPath.toAbsolutePath}/a-new-dir")
+        newDir.mkdir()
+        // Within 60 seconds is used in case the Java WatchService is acting slow ...
+        within(60 seconds) {
+          expectMsg(s"New thing at ${newDir.toPath}")
+        }
+      }
+    }
+
     it("should fire the appropriate callback if a monitored file has been modified") {
       new Fixtures {
         val register = RegisterCallback(ENTRY_MODIFY, None, recursive = false, tempFile.toPath,
@@ -368,22 +384,6 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
         // Within 60 seconds is used in case the Java WatchService is acting slow ...
         within(60 seconds) {
           expectMsg(s"Modified file is at ${tempFile.toPath}")
-        }
-      }
-    }
-
-    it("should fire the appropriate callback if a monitored directory has a directory created inside of it") {
-      new Fixtures {
-        val register = RegisterCallback(ENTRY_CREATE, None, recursive = false, tempDirPath,
-          path => testActor ! s"New thing at $path")
-        monitorActorRef ! register
-        // Sleep to make sure that the Java WatchService is monitoring the file ...
-        Thread.sleep(1000)
-        val newDir = new File(s"${tempDirPath.toAbsolutePath}/a-new-dir")
-        newDir.mkdir()
-        // Within 60 seconds is used in case the Java WatchService is acting slow ...
-        within(60 seconds) {
-          expectMsg(s"New thing at ${newDir.toPath}")
         }
       }
     }
