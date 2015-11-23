@@ -237,13 +237,13 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
           bossy = registerMessage.bossy
         )
       )
-      val persistentDelete = persistentUnRegister(registerMessage)
+      val persistentUnregisterCallback = persistentUnRegister(registerMessage)
       newCallbackRegistryMap(
         persistentCreate,
         ENTRY_DELETE,
         _.withCallbackFor(
           path = absolutePath,
-          callback = persistentDelete,
+          callback = persistentUnregisterCallback,
           recursive = registerMessage.recursive,
           bossy = registerMessage.bossy
         )
