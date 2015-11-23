@@ -1,16 +1,25 @@
 package com.beachape.filemanagement
 
 import akka.actor.ActorRef
-import collection.JavaConversions._
+import scala.concurrent.duration._
+import collection.JavaConverters._
 import com.beachape.filemanagement.Messages.EventAtPath
 import java.nio.file.StandardWatchEventKinds._
 import java.nio.file.{ WatchKey, WatchEvent, Path, FileSystems }
-import java.nio.file.WatchEvent.Modifier
+import java.nio.file.WatchEvent.{ Kind, Modifier }
 
 /**
  * Companion object for factory method
  */
 object WatchServiceTask {
+
+  private val EventAggregationWait: FiniteDuration = 2.seconds
+
+  private val SupportedEvents: Set[Kind[_]] = Set(ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY)
+
+  /**
+   * Creates a WatchServiceTask tied to an actor
+   */
   def apply(notifyActor: ActorRef) = new WatchServiceTask(notifyActor)
 }
 
@@ -38,14 +47,26 @@ class WatchServiceTask(notifyActor: ActorRef) extends Runnable {
     try {
       while (!Thread.currentThread().isInterrupted) {
         val key = watchService.take()
-        key.pollEvents() foreach { event =>
-          val relativePath = event.context().asInstanceOf[Path]
-          val path = contextAbsolutePath(key, relativePath)
+        /*
+          * Sleeping here helps with multiple update events firing due to system-dependent auditing that may
+          * cause update events to be fired.
+          *
+          * See http://stackoverflow.com/questions/16777869/java-7-watchservice-ignoring-multiple-occurrences-of-the-same-event
+         */
+        Thread.sleep(WatchServiceTask.EventAggregationWait.toMillis)
+        key.pollEvents().asScala foreach { event =>
           event.kind match {
             // Don't really have a choice here because of type erasure.
-            case kind: WatchEvent.Kind[_] if List(ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY).contains(kind) =>
+            case kind: WatchEvent.Kind[_] if WatchServiceTask.SupportedEvents.contains(kind) => {
+              /*
+                * In the case of ENTRY_CREATE, ENTRY_DELETE, and ENTRY_MODIFY events the context is a Path.
+                * Since we have filtered for this in the guard for this pattern, we can do a cast to Path.
+               */
+              val relativePath = event.context().asInstanceOf[Path]
+              val path = contextAbsolutePath(key, relativePath)
               notifyActor ! EventAtPath(kind, path)
-            case x => // do nothing
+            }
+            case _ => // do nothing
           }
         }
         key.reset()
@@ -73,12 +94,12 @@ class WatchServiceTask(notifyActor: ActorRef) extends Runnable {
     val fileAtPath = path.toFile
     if (fileAtPath.isDirectory) {
       modifier match {
-        case Some(modifier) => Some(path.register(watchService, eventTypes.distinct.toArray, modifier))
+        case Some(mod) => Some(path.register(watchService, eventTypes.distinct.toArray, mod))
         case None => Some(path.register(watchService, eventTypes.distinct: _*))
       }
     } else if (fileAtPath.isFile) {
       modifier match {
-        case Some(modifier) => Some(path.getParent.register(watchService, eventTypes.distinct.toArray, modifier))
+        case Some(mod) => Some(path.getParent.register(watchService, eventTypes.distinct.toArray, mod))
         case None => Some(path.getParent.register(watchService, eventTypes.distinct: _*))
       }
     } else {
