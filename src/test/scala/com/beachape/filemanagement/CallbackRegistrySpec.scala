@@ -3,7 +3,8 @@ package com.beachape.filemanagement
 import java.nio.file.{ Path, Paths, Files }
 import org.scalatest._
 
-class CallbackRegistrySpec extends FunSpec
+class CallbackRegistrySpec
+    extends FunSpec
     with PrivateMethodTester
     with Matchers
     with BeforeAndAfter {
