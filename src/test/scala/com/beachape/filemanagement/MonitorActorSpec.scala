@@ -14,14 +14,13 @@ import scala.util.control.NonFatal
 import scala.language.postfixOps
 import com.beachape.filemanagement.MonitorActor.CallbackRegistryMap
 
-class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
-    with FunSpecLike
+class MonitorActorSpec
+    extends FunSpec
     with Matchers
     with BeforeAndAfter
-    with ImplicitSender
     with PrivateMethodTester {
 
-  trait Fixtures {
+  abstract class Fixtures extends TestKit(ActorSystem("testSystem")) with ImplicitSender {
     val emptyCbMap = MonitorActor.initialEventTypeCallbackRegistryMap
 
     // Actor
@@ -116,20 +115,26 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
   describe("construction via Props factory") {
 
     it("should throw an error when concurrency parameter is set to less than 1") {
-      val thrown = intercept[IllegalArgumentException] {
-        TestActorRef(MonitorActor(0))
+      new Fixtures {
+        val thrown = intercept[IllegalArgumentException] {
+          TestActorRef(MonitorActor(0))
+        }
+        thrown.getMessage should be("requirement failed: Callback concurrency requested is 0 but it should at least be 1")
       }
-      thrown.getMessage should be("requirement failed: Callback concurrency requested is 0 but it should at least be 1")
     }
 
     it("should not throw an error when concurrency parameter is set to 1") {
-      TestActorRef(MonitorActor(1))
-      true should be(true)
+      new Fixtures {
+        TestActorRef(MonitorActor(1))
+        true should be(true)
+      }
     }
 
     it("should not throw an error when concurrency parameter is set to > 1") {
-      TestActorRef(MonitorActor(2))
-      true should be(true)
+      new Fixtures {
+        TestActorRef(MonitorActor(2))
+        true should be(true)
+      }
     }
 
   }
