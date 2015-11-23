@@ -210,19 +210,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
         bossy = registerMessage.bossy
       )
     )
-    val withPersistent = if (registerMessage.persistent && absolutePath.toFile.isDirectory) {
-      val persistentCallback = persistentRegisterCallback(registerMessage)
-      newCallbackRegistryMap(
-        withNewPathRegistryMap,
-        ENTRY_CREATE,
-        _.withCallbackFor(
-          path = absolutePath,
-          callback = persistentCallback,
-          recursive = registerMessage.recursive,
-          bossy = registerMessage.bossy
-        )
-      )
-    } else withNewPathRegistryMap
+    val withPersistent = withPersistentCallbacks(withNewPathRegistryMap, absolutePath, registerMessage)
     addPathToWatchServiceTask(
       cbRegistryMap = withPersistent,
       modifier = registerMessage.modifier,
@@ -232,12 +220,51 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
     context.become(withCallbackRegistryMap(withPersistent))
   }
 
+  private[this] def withPersistentCallbacks(
+    withNewPathRegistryMap: CallbackRegistryMap,
+    absolutePath: Path,
+    registerMessage: RegisterCallbackMessage
+  ) = {
+    if (registerMessage.persistent && absolutePath.toFile.isDirectory) {
+      val persistentCallback = persistentRegisterCallback(registerMessage)
+      val persistentCreate = newCallbackRegistryMap(
+        withNewPathRegistryMap,
+        ENTRY_CREATE,
+        _.withCallbackFor(
+          path = absolutePath,
+          callback = persistentCallback,
+          recursive = registerMessage.recursive,
+          bossy = registerMessage.bossy
+        )
+      )
+      val persistentDelete = persistentUnRegister(registerMessage)
+      newCallbackRegistryMap(
+        persistentCreate,
+        ENTRY_DELETE,
+        _.withCallbackFor(
+          path = absolutePath,
+          callback = persistentDelete,
+          recursive = registerMessage.recursive,
+          bossy = registerMessage.bossy
+        )
+      )
+    } else withNewPathRegistryMap
+  }
+
   private[this] def persistentRegisterCallback(m: RegisterCallbackMessage): Callback = { p =>
     val registerMessage = m match {
       case m: RegisterCallback => m.copy(path = p)
       case m: RegisterBossyCallback => m.copy(path = p)
     }
     monitorActor ! registerMessage
+  }
+
+  private[this] def persistentUnRegister(m: RegisterCallbackMessage): Callback = { p =>
+    monitorActor ! UnRegisterCallback(
+      event = m.event,
+      recursive = m.recursive,
+      path = m.path
+    )
   }
 
 }
