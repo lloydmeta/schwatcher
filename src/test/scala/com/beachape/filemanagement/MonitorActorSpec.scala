@@ -14,18 +14,17 @@ import scala.util.control.NonFatal
 import scala.language.postfixOps
 import com.beachape.filemanagement.MonitorActor.CallbackRegistryMap
 
-class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
-    with FunSpecLike
+class MonitorActorSpec
+    extends FunSpec
     with Matchers
     with BeforeAndAfter
-    with ImplicitSender
     with PrivateMethodTester {
 
-  trait Fixtures {
+  abstract class Fixtures extends TestKit(ActorSystem("testSystem")) with ImplicitSender {
     val emptyCbMap = MonitorActor.initialEventTypeCallbackRegistryMap
 
     // Actor
-    val monitorActorRef = TestActorRef(new MonitorActor)
+    val monitorActorRef = TestActorRef(new MonitorActor(concurrency = 1))
     val monitorActor = monitorActorRef.underlyingActor
 
     // Files
@@ -116,20 +115,26 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
   describe("construction via Props factory") {
 
     it("should throw an error when concurrency parameter is set to less than 1") {
-      val thrown = intercept[IllegalArgumentException] {
-        TestActorRef(MonitorActor(0))
+      new Fixtures {
+        val thrown = intercept[IllegalArgumentException] {
+          TestActorRef(MonitorActor(0))
+        }
+        thrown.getMessage should be("requirement failed: Callback concurrency requested is 0 but it should at least be 1")
       }
-      thrown.getMessage should be("requirement failed: Callback concurrency requested is 0 but it should at least be 1")
     }
 
     it("should not throw an error when concurrency parameter is set to 1") {
-      TestActorRef(MonitorActor(1))
-      true should be(true)
+      new Fixtures {
+        TestActorRef(MonitorActor(1))
+        true should be(true)
+      }
     }
 
     it("should not throw an error when concurrency parameter is set to > 1") {
-      TestActorRef(MonitorActor(2))
-      true should be(true)
+      new Fixtures {
+        TestActorRef(MonitorActor(2))
+        true should be(true)
+      }
     }
 
   }
@@ -355,6 +360,22 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
 
   describe("integration testing") {
 
+    it("should fire the appropriate callback if a monitored directory has a directory created inside of it") {
+      new Fixtures {
+        val register = RegisterCallback(ENTRY_CREATE, None, recursive = false, tempDirPath,
+          path => testActor ! s"New thing at $path")
+        monitorActorRef ! register
+        // Sleep to make sure that the Java WatchService is monitoring the file ...
+        Thread.sleep(1000)
+        val newDir = new File(s"${tempDirPath.toAbsolutePath}/a-new-dir")
+        newDir.mkdir()
+        // Within 60 seconds is used in case the Java WatchService is acting slow ...
+        within(60 seconds) {
+          expectMsg(s"New thing at ${newDir.toPath}")
+        }
+      }
+    }
+
     it("should fire the appropriate callback if a monitored file has been modified") {
       new Fixtures {
         val register = RegisterCallback(ENTRY_MODIFY, None, recursive = false, tempFile.toPath,
@@ -372,28 +393,11 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
       }
     }
 
-    it("should fire the appropriate callback if a monitored directory has a directory created inside of it") {
-      new Fixtures {
-        val register = RegisterCallback(ENTRY_CREATE, None, recursive = false, tempDirPath,
-          path => testActor ! s"New thing at $path")
-        monitorActorRef ! register
-        // Sleep to make sure that the Java WatchService is monitoring the file ...
-        Thread.sleep(1000)
-        val newDir = new File(s"${tempDirPath.toAbsolutePath}/a-new-dir")
-        newDir.mkdir()
-        // Within 60 seconds is used in case the Java WatchService is acting slow ...
-        within(60 seconds) {
-          expectMsg(s"New thing at ${newDir.toPath}")
-        }
-      }
-    }
-
   }
 
   describe("Register with specified modifier") {
     it("should use specified modifier for polling event") {
       new Fixtures {
-        val monitorActorRef2 = TestActorRef(new MonitorActor(concurrency = 1)) // should make it less temperamental
         var start: Long = _
         var timeLOW: Long = _
         var timeHIGH: Long = _
@@ -410,8 +414,8 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
               })
 
             start = System.nanoTime
-            monitorActorRef2 ! registerLOW
-            monitorActorRef2 ! registerHIGH
+            monitorActorRef ! registerLOW
+            monitorActorRef ! registerHIGH
             // Sleep to make sure that the Java WatchService is monitoring the file ...
             Thread.sleep(3000)
             val writer = new BufferedWriter(new FileWriter(tempFile))

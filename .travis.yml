@@ -1,9 +1,19 @@
 language: scala
+
 jdk:
-  - openjdk7
   - oraclejdk7
   - oraclejdk8
+
 scala:
-  - 2.11.6
-script: "sbt clean +test"
+  - 2.11.7
+
+script:
+  - "sbt clean +test"
+  - find $HOME/.sbt -name "*.lock" -type f -delete && find $HOME/.ivy2/cache -name "*[\[\]\(\)]*.properties" -type f -delete
+
 sudo: false
+
+cache:
+  directories:
+  - $HOME/.sbt
+  - $HOME/.ivy2
