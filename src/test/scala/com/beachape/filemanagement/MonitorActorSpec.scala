@@ -461,6 +461,33 @@ class MonitorActorSpec
 
   }
 
+  it("should fire proper callbacks when persistent callbacks are registered") {
+    new Fixtures {
+      val register = RegisterCallback(
+        event = ENTRY_MODIFY,
+        modifier = None,
+        recursive = false,
+        persistent = true,
+        path = tempDirPath,
+        path => testActor ! s"Modified file is at $path"
+      )
+      monitorActorRef ! register
+      // Sleep to make sure that the Java WatchService is monitoring the file ...
+      Thread.sleep(1000)
+      val newlyCreatedFile = Files.createTempFile(tempDirPath, "hopefully-works", ".txt")
+      newlyCreatedFile.toFile.deleteOnExit()
+      // Sleep to make sure that the Java WatchService is monitoring the new file ...
+      Thread.sleep(10000)
+      val writer = new BufferedWriter(new FileWriter(newlyCreatedFile.toFile))
+      writer.write("There's text in here wee!!")
+      writer.close
+      // Within 60 seconds is used in case the Java WatchService is acting slow ...
+      within(60 seconds) {
+        expectMsg(s"Modified file is at ${newlyCreatedFile}")
+      }
+    }
+  }
+
   describe("Register with specified modifier") {
     it("should use specified modifier for polling event") {
       new Fixtures {

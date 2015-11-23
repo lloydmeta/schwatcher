@@ -229,7 +229,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
       path = absolutePath,
       recursive = registerMessage.recursive
     )
-    context.become(withCallbackRegistryMap(withNewPathRegistryMap))
+    context.become(withCallbackRegistryMap(withPersistent))
   }
 
   private[this] def persistentRegisterCallback(m: RegisterCallbackMessage): Callback = { p =>

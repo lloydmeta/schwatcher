@@ -13,7 +13,7 @@ import java.nio.file.WatchEvent.{ Kind, Modifier }
  */
 object WatchServiceTask {
 
-  private val EventAggregationWait: FiniteDuration = 2.seconds
+  private val EventAggregationWait: FiniteDuration = 1.second
 
   private val SupportedEvents: Set[Kind[_]] = Set(ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY)
 
