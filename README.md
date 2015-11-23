@@ -91,6 +91,7 @@ fileMonitorActor ! RegisterCallback(
   ENTRY_MODIFY,
   None,
   recursive = false,
+  persistent = false,
   path = desktopFile,
   modifyCallbackFile)
 
@@ -102,6 +103,7 @@ fileMonitorActor ! RegisterCallback(
   ENTRY_MODIFY,
   None,
   recursive = false,
+  persistent = false,
   path = desktop,
   modifyCallbackDirectory)
 

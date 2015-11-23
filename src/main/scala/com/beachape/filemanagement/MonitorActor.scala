@@ -207,11 +207,24 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
         path = absolutePath,
         callback = registerMessage.callback,
         recursive = registerMessage.recursive,
-        bossy = registerMessage.isBossy
+        bossy = registerMessage.bossy
       )
     )
+    val withPersistent = if (registerMessage.persistent && absolutePath.toFile.isDirectory) {
+      val persistentCallback = persistentRegisterCallback(registerMessage)
+      newCallbackRegistryMap(
+        withNewPathRegistryMap,
+        ENTRY_CREATE,
+        _.withCallbackFor(
+          path = absolutePath,
+          callback = persistentCallback,
+          recursive = registerMessage.recursive,
+          bossy = registerMessage.bossy
+        )
+      )
+    } else withNewPathRegistryMap
     addPathToWatchServiceTask(
-      cbRegistryMap = withNewPathRegistryMap,
+      cbRegistryMap = withPersistent,
       modifier = registerMessage.modifier,
       path = absolutePath,
       recursive = registerMessage.recursive
@@ -219,7 +232,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
     context.become(withCallbackRegistryMap(withNewPathRegistryMap))
   }
 
-  private[this] def autoRegisterCallback(m: RegisterCallbackMessage): Callback = { p =>
+  private[this] def persistentRegisterCallback(m: RegisterCallbackMessage): Callback = { p =>
     val registerMessage = m match {
       case m: RegisterCallback => m.copy(path = p)
       case m: RegisterBossyCallback => m.copy(path = p)

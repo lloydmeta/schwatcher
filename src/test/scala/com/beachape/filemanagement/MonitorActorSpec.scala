@@ -277,7 +277,14 @@ class MonitorActorSpec
 
         it("should register a callback when given a file path") {
           new MessagingFixtures {
-            val registerFileCallbackMessage = RegisterCallback(ENTRY_CREATE, None, recursive = false, tempFileInTempDir, callbackFunc)
+            val registerFileCallbackMessage = RegisterCallback(
+              event = ENTRY_CREATE,
+              modifier = None,
+              recursive = false,
+              persistent = false,
+              path = tempFileInTempDir,
+              callback = callbackFunc
+            )
             monitorActorRef ! registerFileCallbackMessage
             monitorActorRef ! EventAtPath(ENTRY_CREATE, tempFileInTempDir)
             expectMsg(tempFileInTempDir)
@@ -287,7 +294,14 @@ class MonitorActorSpec
 
         it("should register a callback when given a directory path") {
           new MessagingFixtures {
-            val registerFileCallbackMessage = RegisterCallback(ENTRY_MODIFY, None, recursive = false, tempDirPath, callbackFunc)
+            val registerFileCallbackMessage = RegisterCallback(
+              event = ENTRY_MODIFY,
+              modifier = None,
+              recursive = false,
+              persistent = false,
+              path = tempDirPath,
+              callback = callbackFunc
+            )
             monitorActorRef ! registerFileCallbackMessage
             monitorActorRef ! EventAtPath(ENTRY_MODIFY, tempDirPath)
             expectMsg(tempDirPath)
@@ -296,7 +310,14 @@ class MonitorActorSpec
 
         it("should register a callback recursively for a directory path") {
           new MessagingFixtures {
-            val registerFileCallbackMessage = RegisterCallback(ENTRY_DELETE, None, recursive = true, tempDirPath, callbackFunc)
+            val registerFileCallbackMessage = RegisterCallback(
+              event = ENTRY_DELETE,
+              modifier = None,
+              recursive = true,
+              persistent = false,
+              path = tempDirPath,
+              callback = callbackFunc
+            )
             monitorActorRef ! registerFileCallbackMessage
             monitorActorRef ! EventAtPath(ENTRY_DELETE, tempDirLevel1Path)
             monitorActorRef ! EventAtPath(ENTRY_DELETE, tempDirLevel2Path)
@@ -315,7 +336,14 @@ class MonitorActorSpec
 
         it("should un-register a callback when given a file path") {
           new MessagingFixtures {
-            monitorActorRef ! RegisterCallback(ENTRY_CREATE, None, recursive = false, tempFileInTempDir, callbackFunc)
+            monitorActorRef ! RegisterCallback(
+              event = ENTRY_CREATE,
+              modifier = None,
+              recursive = false,
+              persistent = false,
+              path = tempFileInTempDir,
+              callback = callbackFunc
+            )
             monitorActorRef ! UnRegisterCallback(ENTRY_CREATE, recursive = false, tempFileInTempDir)
             monitorActorRef ! EventAtPath(ENTRY_CREATE, tempFileInTempDir)
             expectNoMsg()
@@ -325,7 +353,13 @@ class MonitorActorSpec
 
         it("should un-register a callback when given a directory path") {
           new MessagingFixtures {
-            monitorActorRef ! RegisterCallback(ENTRY_DELETE, None, recursive = false, tempDirPath, callbackFunc)
+            monitorActorRef ! RegisterCallback(
+              event = ENTRY_DELETE,
+              modifier = None,
+              recursive = false,
+              path = tempDirPath,
+              callback = callbackFunc
+            )
             monitorActorRef ! UnRegisterCallback(ENTRY_DELETE, recursive = false, tempDirPath)
             monitorActorRef ! EventAtPath(ENTRY_DELETE, tempDirPath)
             expectNoMsg()
@@ -334,7 +368,14 @@ class MonitorActorSpec
 
         it("should un-register a callback recursively for a directory path") {
           new MessagingFixtures {
-            monitorActorRef ! RegisterCallback(ENTRY_MODIFY, None, recursive = true, tempDirPath, callbackFunc)
+            monitorActorRef ! RegisterCallback(
+              event = ENTRY_MODIFY,
+              modifier = None,
+              recursive = true,
+              persistent = true,
+              path = tempDirPath,
+              callback = callbackFunc
+            )
             monitorActorRef ! UnRegisterCallback(ENTRY_MODIFY, recursive = true, tempDirPath)
             monitorActorRef ! EventAtPath(ENTRY_MODIFY, tempDirLevel1Path)
             monitorActorRef ! EventAtPath(ENTRY_MODIFY, tempDirLevel1Path)
@@ -344,8 +385,21 @@ class MonitorActorSpec
 
         it("should not un-register a callback for a file inside a directory tree even when called recursively") {
           new MessagingFixtures {
-            monitorActorRef ! RegisterCallback(ENTRY_CREATE, None, recursive = true, tempDirPath, callbackFunc)
-            monitorActorRef ! RegisterCallback(ENTRY_CREATE, None, recursive = true, tempFileInTempDir, callbackFunc)
+            monitorActorRef ! RegisterCallback(
+              event = ENTRY_CREATE,
+              modifier = None,
+              recursive = true,
+              persistent = true,
+              path = tempDirPath,
+              callback = callbackFunc
+            )
+            monitorActorRef ! RegisterCallback(
+              event = ENTRY_CREATE,
+              modifier = None,
+              recursive = true,
+              path = tempFileInTempDir,
+              callback = callbackFunc
+            )
             monitorActorRef ! UnRegisterCallback(ENTRY_CREATE, recursive = true, tempDirPath)
             monitorActorRef ! EventAtPath(ENTRY_CREATE, tempFileInTempDir)
             expectMsg(tempFileInTempDir)
@@ -362,8 +416,14 @@ class MonitorActorSpec
 
     it("should fire the appropriate callback if a monitored directory has a directory created inside of it") {
       new Fixtures {
-        val register = RegisterCallback(ENTRY_CREATE, None, recursive = false, tempDirPath,
-          path => testActor ! s"New thing at $path")
+        val register = RegisterCallback(
+          event = ENTRY_CREATE,
+          modifier = None,
+          recursive = false,
+          persistent = false,
+          path = tempDirPath,
+          path => testActor ! s"New thing at $path"
+        )
         monitorActorRef ! register
         // Sleep to make sure that the Java WatchService is monitoring the file ...
         Thread.sleep(1000)
@@ -378,8 +438,14 @@ class MonitorActorSpec
 
     it("should fire the appropriate callback if a monitored file has been modified") {
       new Fixtures {
-        val register = RegisterCallback(ENTRY_MODIFY, None, recursive = false, tempFile.toPath,
-          path => testActor ! s"Modified file is at $path")
+        val register = RegisterCallback(
+          event = ENTRY_MODIFY,
+          modifier = None,
+          recursive = false,
+          persistent = false,
+          path = tempFile.toPath,
+          path => testActor ! s"Modified file is at $path"
+        )
         monitorActorRef ! register
         // Sleep to make sure that the Java WatchService is monitoring the file ...
         Thread.sleep(1000)
@@ -404,14 +470,26 @@ class MonitorActorSpec
         // Execute only when `HIGH` is available
         HIGH match {
           case Some(_) =>
-            val registerLOW = RegisterCallback(ENTRY_MODIFY, LOW, recursive = false, tempFile.toPath,
+            val registerLOW = RegisterCallback(
+              event = ENTRY_MODIFY,
+              modifier = LOW,
+              recursive = false,
+              persistent = false,
+              path = tempFile.toPath,
               path => {
                 timeLOW = System.nanoTime - start
-              })
-            val registerHIGH = RegisterCallback(ENTRY_MODIFY, HIGH, recursive = false, tempFile.toPath,
+              }
+            )
+            val registerHIGH = RegisterCallback(
+              event = ENTRY_MODIFY,
+              modifier = HIGH,
+              recursive = false,
+              persistent = false,
+              path = tempFile.toPath,
               path => {
                 timeHIGH = System.nanoTime - start
-              })
+              }
+            )
 
             start = System.nanoTime
             monitorActorRef ! registerLOW

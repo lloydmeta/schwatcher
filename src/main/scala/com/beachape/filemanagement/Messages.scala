@@ -21,7 +21,8 @@ object Messages {
     def recursive: Boolean
     def path: Path
     def callback: Callback
-    def isBossy: Boolean
+    def bossy: Boolean
+    def persistent: Boolean
   }
 
   /**
@@ -46,10 +47,11 @@ object Messages {
       event: WatchEvent.Kind[Path],
       modifier: Option[Modifier] = None,
       recursive: Boolean = false,
+      persistent: Boolean = false,
       path: Path,
       callback: Callback
   ) extends RegisterCallbackMessage {
-    val isBossy = false
+    val bossy = false
   }
 
   /**
@@ -67,10 +69,11 @@ object Messages {
       event: WatchEvent.Kind[Path],
       modifier: Option[Modifier] = None,
       recursive: Boolean = false,
+      persistent: Boolean = false,
       path: Path,
       callback: Callback
   ) extends RegisterCallbackMessage {
-    val isBossy = true
+    val bossy = true
   }
 
   /**
