@@ -4,6 +4,6 @@ jdk:
   - oraclejdk7
   - oraclejdk8
 scala:
-  - 2.11.6
+  - 2.11.7
 script: "sbt clean +test"
 sudo: false
