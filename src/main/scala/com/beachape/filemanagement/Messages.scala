@@ -11,6 +11,19 @@ import scala.language.existentials
  */
 
 object Messages {
+
+  /**
+   * Base trait for registering callbacks
+   */
+  sealed trait RegisterCallbackMessage {
+    def event: WatchEvent.Kind[Path]
+    def modifier: Option[Modifier]
+    def recursive: Boolean
+    def path: Path
+    def callback: Callback
+    def isBossy: Boolean
+  }
+
   /**
    * Message case class for telling a MonitorActor that an
    * event has happened and at what path
@@ -30,12 +43,14 @@ object Messages {
    * @param callback (Path) => Unit type function
    */
   sealed case class RegisterCallback(
-    event: WatchEvent.Kind[Path],
-    modifier: Option[Modifier] = None,
-    recursive: Boolean = false,
-    path: Path,
-    callback: Callback
-  )
+      event: WatchEvent.Kind[Path],
+      modifier: Option[Modifier] = None,
+      recursive: Boolean = false,
+      path: Path,
+      callback: Callback
+  ) extends RegisterCallbackMessage {
+    val isBossy = false
+  }
 
   /**
    * Message case class for telling a MonitorActor that the callback contained
@@ -49,12 +64,14 @@ object Messages {
    * @param callback (Path) => Unit type function
    */
   sealed case class RegisterBossyCallback(
-    event: WatchEvent.Kind[Path],
-    modifier: Option[Modifier] = None,
-    recursive: Boolean = false,
-    path: Path,
-    callback: Callback
-  )
+      event: WatchEvent.Kind[Path],
+      modifier: Option[Modifier] = None,
+      recursive: Boolean = false,
+      path: Path,
+      callback: Callback
+  ) extends RegisterCallbackMessage {
+    val isBossy = true
+  }
 
   /**
    * Message case class for telling a MonitorActor to un-register a

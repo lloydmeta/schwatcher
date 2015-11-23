@@ -3,7 +3,7 @@ package com.beachape.filemanagement
 import akka.actor.{ ActorLogging, Actor, Props }
 import akka.routing.{ SmallestMailboxPool, DefaultResizer }
 import com.beachape.filemanagement.Messages._
-import com.beachape.filemanagement.RegistryTypes.Callbacks
+import com.beachape.filemanagement.RegistryTypes._
 import java.nio.file.StandardWatchEventKinds._
 import java.nio.file.{ Path, WatchEvent }
 import java.nio.file.WatchEvent.Modifier
@@ -79,30 +79,11 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
       processCallbacksFor(currentCallbackRegistryMap, event.asInstanceOf[WatchEvent.Kind[Path]], absolutePath)
     }
 
-    case RegisterCallback(event, modifier, recursive, path, callback) => {
-      // Ensure that only absolute paths are used
-      val absolutePath = path.toAbsolutePath
-      val newCallbackMap = newCallbackRegistryMap(
-        currentCallbackRegistryMap,
-        event,
-        _ withCallbackFor (absolutePath, callback, recursive)
+    case m: RegisterCallbackMessage => {
+      addCallback(
+        currentCallbackRegistryMap = currentCallbackRegistryMap,
+        m
       )
-      addPathToWatchServiceTask(newCallbackMap, modifier, absolutePath, recursive)
-      context.become(withCallbackRegistryMap(newCallbackMap))
-    }
-
-    // This handler actually first unregisters and then registers the given path
-    case RegisterBossyCallback(event, modifier, recursive, path, callback) => {
-      // Ensure that only absolute paths are used
-      val absolutePath = path.toAbsolutePath
-      // Generate a map with the specific path requested
-      val withNewPathRegistryMap = newCallbackRegistryMap(
-        currentCallbackRegistryMap,
-        event,
-        _ withCallbackFor (absolutePath, callback, recursive, true)
-      )
-      addPathToWatchServiceTask(withNewPathRegistryMap, modifier, absolutePath, recursive)
-      context.become(withCallbackRegistryMap(withNewPathRegistryMap))
     }
 
     case UnRegisterCallback(event, recursive, path) => {
@@ -211,4 +192,39 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
     if (event == ENTRY_DELETE || event == ENTRY_CREATE || path.toFile.isFile)
       processCallbacks(path.getParent)
   }
+
+  private[this] def addCallback(
+    currentCallbackRegistryMap: CallbackRegistryMap,
+    registerMessage: RegisterCallbackMessage
+  ): Unit = {
+    // Ensure that only absolute paths are used
+    val absolutePath = registerMessage.path.toAbsolutePath
+    // Generate a map with the specific path requested
+    val withNewPathRegistryMap = newCallbackRegistryMap(
+      currentCallbackRegistryMap,
+      registerMessage.event,
+      _.withCallbackFor(
+        path = absolutePath,
+        callback = registerMessage.callback,
+        recursive = registerMessage.recursive,
+        bossy = registerMessage.isBossy
+      )
+    )
+    addPathToWatchServiceTask(
+      cbRegistryMap = withNewPathRegistryMap,
+      modifier = registerMessage.modifier,
+      path = absolutePath,
+      recursive = registerMessage.recursive
+    )
+    context.become(withCallbackRegistryMap(withNewPathRegistryMap))
+  }
+
+  private[this] def autoRegisterCallback(m: RegisterCallbackMessage): Callback = { p =>
+    val registerMessage = m match {
+      case m: RegisterCallback => m.copy(path = p)
+      case m: RegisterBossyCallback => m.copy(path = p)
+    }
+    monitorActor ! registerMessage
+  }
+
 }
