@@ -25,7 +25,7 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
     val emptyCbMap = MonitorActor.initialEventTypeCallbackRegistryMap
 
     // Actor
-    val monitorActorRef = TestActorRef(new MonitorActor)
+    val monitorActorRef = TestActorRef(new MonitorActor(concurrency = 1))
     val monitorActor = monitorActorRef.underlyingActor
 
     // Files
@@ -393,7 +393,6 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
   describe("Register with specified modifier") {
     it("should use specified modifier for polling event") {
       new Fixtures {
-        val monitorActorRef2 = TestActorRef(new MonitorActor(concurrency = 1)) // should make it less temperamental
         var start: Long = _
         var timeLOW: Long = _
         var timeHIGH: Long = _
@@ -410,8 +409,8 @@ class MonitorActorSpec extends TestKit(ActorSystem("testSystem"))
               })
 
             start = System.nanoTime
-            monitorActorRef2 ! registerLOW
-            monitorActorRef2 ! registerHIGH
+            monitorActorRef ! registerLOW
+            monitorActorRef ! registerHIGH
             // Sleep to make sure that the Java WatchService is monitoring the file ...
             Thread.sleep(3000)
             val writer = new BufferedWriter(new FileWriter(tempFile))
