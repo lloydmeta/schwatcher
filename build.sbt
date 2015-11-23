@@ -1,6 +1,6 @@
 name := "schwatcher"
 
-version := "0.1.11"
+version := "0.1.12-SNAPSHOT"
 
 scalaVersion := "2.11.7"
 
