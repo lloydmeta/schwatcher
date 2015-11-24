@@ -84,28 +84,20 @@ val modifyCallbackDirectory: Callback = { path => println(s"Something was modifi
 val desktop = Paths get "/Users/lloyd/Desktop"
 val desktopFile = Paths get "/Users/lloyd/Desktop/test"
 
-/*
-  This will receive callbacks for just the one file
- */
 fileMonitorActor ! RegisterCallback(
-  ENTRY_MODIFY,
-  None,
-  recursive = false,
-  persistent = false,
+  event = ENTRY_MODIFY,
   path = desktopFile,
-  modifyCallbackFile)
+  callback =  modifyCallbackFile
+  )
 
 /*
   If desktopFile is modified, this will also receive a callback
   it will receive callbacks for everything under the desktop directory
 */
 fileMonitorActor ! RegisterCallback(
-  ENTRY_MODIFY,
-  None,
-  recursive = false,
-  persistent = false,
+  event = ENTRY_MODIFY,
   path = desktop,
-  modifyCallbackDirectory)
+  callback = modifyCallbackDirectory)
 
 
 //modify a monitored file

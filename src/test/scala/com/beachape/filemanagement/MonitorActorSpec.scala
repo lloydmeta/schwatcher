@@ -20,6 +20,8 @@ class MonitorActorSpec
     with BeforeAndAfter
     with PrivateMethodTester {
 
+  private val waitTime = 15 seconds
+
   abstract class Fixtures extends TestKit(ActorSystem("testSystem")) with ImplicitSender {
     val emptyCbMap = MonitorActor.initialEventTypeCallbackRegistryMap
 
@@ -126,14 +128,12 @@ class MonitorActorSpec
     it("should not throw an error when concurrency parameter is set to 1") {
       new Fixtures {
         TestActorRef(MonitorActor(1))
-        true should be(true)
       }
     }
 
     it("should not throw an error when concurrency parameter is set to > 1") {
       new Fixtures {
         TestActorRef(MonitorActor(2))
-        true should be(true)
       }
     }
 
@@ -168,9 +168,9 @@ class MonitorActorSpec
       it("should add callbacks for all folders that exist under the path given") {
         new Fixtures {
           val addedMap = addCallbackFor(emptyCbMap, tempDirPath, ENTRY_CREATE, dummyFunction, true)
-          monitorActor.callbacksFor(addedMap, ENTRY_CREATE, tempDirLevel1Path).map(callbacks =>
+          monitorActor.callbacksFor(addedMap, ENTRY_CREATE, tempDirLevel1Path).foreach(callbacks =>
             callbacks should contain(dummyFunction))
-          monitorActor.callbacksFor(addedMap, ENTRY_CREATE, tempDirLevel2Path).map(callbacks =>
+          monitorActor.callbacksFor(addedMap, ENTRY_CREATE, tempDirLevel2Path).foreach(callbacks =>
             callbacks should contain(dummyFunction))
         }
       }
@@ -178,7 +178,7 @@ class MonitorActorSpec
       it("should add callbacks for a file path") {
         new Fixtures {
           val addedMap = addCallbackFor(emptyCbMap, tempFileInTempDir, ENTRY_CREATE, dummyFunction, true)
-          monitorActor.callbacksFor(addedMap, ENTRY_CREATE, tempFileInTempDir).map(callbacks =>
+          monitorActor.callbacksFor(addedMap, ENTRY_CREATE, tempFileInTempDir).foreach(callbacks =>
             callbacks should contain(dummyFunction))
         }
       }
@@ -186,9 +186,9 @@ class MonitorActorSpec
       it("should not add callbacks recursively if given a file path") {
         new Fixtures {
           val addedMap = addCallbackFor(emptyCbMap, tempFileInTempDir, ENTRY_CREATE, dummyFunction, true)
-          monitorActor.callbacksFor(addedMap, ENTRY_CREATE, tempDirLevel1Path).map(callbacks =>
+          monitorActor.callbacksFor(addedMap, ENTRY_CREATE, tempDirLevel1Path).foreach(callbacks =>
             callbacks should not contain dummyFunction)
-          monitorActor.callbacksFor(addedMap, ENTRY_CREATE, tempDirLevel2Path).map(callbacks =>
+          monitorActor.callbacksFor(addedMap, ENTRY_CREATE, tempDirLevel2Path).foreach(callbacks =>
             callbacks should not contain dummyFunction)
         }
       }
@@ -201,8 +201,8 @@ class MonitorActorSpec
         new Fixtures {
           val addedMap = addCallbackFor(emptyCbMap, tempDirPath, ENTRY_CREATE, dummyFunction, true)
           val removedMap = removeCallbacksFor(addedMap, tempDirPath, ENTRY_CREATE, true)
-          monitorActor.callbacksFor(removedMap, ENTRY_CREATE, tempDirLevel1Path).isEmpty should be(true)
-          monitorActor.callbacksFor(removedMap, ENTRY_CREATE, tempDirLevel2Path).isEmpty should be(true)
+          monitorActor.callbacksFor(removedMap, ENTRY_CREATE, tempDirLevel1Path).isEmpty shouldBe true
+          monitorActor.callbacksFor(removedMap, ENTRY_CREATE, tempDirLevel2Path).isEmpty shouldBe true
         }
       }
 
@@ -210,7 +210,7 @@ class MonitorActorSpec
         new Fixtures {
           val addedMap = addCallbackFor(emptyCbMap, tempFileInTempDir, ENTRY_CREATE, dummyFunction, true)
           val removedMap = removeCallbacksFor(addedMap, tempFileInTempDir, ENTRY_CREATE, true)
-          monitorActor.callbacksFor(removedMap, ENTRY_CREATE, tempFileInTempDir).isEmpty should be(true)
+          monitorActor.callbacksFor(removedMap, ENTRY_CREATE, tempFileInTempDir).isEmpty shouldBe true
         }
       }
 
@@ -232,7 +232,7 @@ class MonitorActorSpec
         new Fixtures {
           val tempFile2 = java.io.File.createTempFile("fakeFile2", ".log")
           tempFile2.deleteOnExit()
-          monitorActor.callbacksFor(emptyCbMap, ENTRY_CREATE, tempFile2.toPath).isEmpty should be(true)
+          monitorActor.callbacksFor(emptyCbMap, ENTRY_CREATE, tempFile2.toPath).isEmpty shouldBe true
         }
       }
 
@@ -247,7 +247,7 @@ class MonitorActorSpec
             (tempDirLevel2Path, ENTRY_CREATE, callbackFunc, false),
             (tempFileInTempDir, ENTRY_CREATE, callbackFunc, false)
           ))
-          monitorActor.processCallbacksFor(cbMap, ENTRY_CREATE, tempFileInTempDir)
+          monitorActor.processCallbacksFor(cbMap, emptyCbMap, ENTRY_CREATE, tempFileInTempDir)
           /*
             Fired twice because tempDirPath and tempFileInTempDir are both registered.
             The file path passed to the callback is still the same though because it
@@ -264,7 +264,7 @@ class MonitorActorSpec
             (tempDirLevel2Path, ENTRY_MODIFY, callbackFunc, false),
             (tempFileInTempDir, ENTRY_MODIFY, callbackFunc, false)
           ))
-          monitorActor.processCallbacksFor(cbMap, ENTRY_MODIFY, tempDirPath)
+          monitorActor.processCallbacksFor(cbMap, emptyCbMap, ENTRY_MODIFY, tempDirPath)
           expectMsg(tempDirPath)
         }
       }
@@ -344,7 +344,7 @@ class MonitorActorSpec
               path = tempFileInTempDir,
               callback = callbackFunc
             )
-            monitorActorRef ! UnRegisterCallback(ENTRY_CREATE, recursive = false, tempFileInTempDir)
+            monitorActorRef ! UnRegisterCallback(ENTRY_CREATE, tempFileInTempDir)
             monitorActorRef ! EventAtPath(ENTRY_CREATE, tempFileInTempDir)
             expectNoMsg()
           }
@@ -360,7 +360,7 @@ class MonitorActorSpec
               path = tempDirPath,
               callback = callbackFunc
             )
-            monitorActorRef ! UnRegisterCallback(ENTRY_DELETE, recursive = false, tempDirPath)
+            monitorActorRef ! UnRegisterCallback(ENTRY_DELETE, tempDirPath)
             monitorActorRef ! EventAtPath(ENTRY_DELETE, tempDirPath)
             expectNoMsg()
           }
@@ -376,7 +376,7 @@ class MonitorActorSpec
               path = tempDirPath,
               callback = callbackFunc
             )
-            monitorActorRef ! UnRegisterCallback(ENTRY_MODIFY, recursive = true, tempDirPath)
+            monitorActorRef ! UnRegisterCallback(ENTRY_MODIFY, tempDirPath, recursive = true)
             monitorActorRef ! EventAtPath(ENTRY_MODIFY, tempDirLevel1Path)
             monitorActorRef ! EventAtPath(ENTRY_MODIFY, tempDirLevel1Path)
             expectNoMsg()
@@ -400,7 +400,7 @@ class MonitorActorSpec
               path = tempFileInTempDir,
               callback = callbackFunc
             )
-            monitorActorRef ! UnRegisterCallback(ENTRY_CREATE, recursive = true, tempDirPath)
+            monitorActorRef ! UnRegisterCallback(ENTRY_CREATE, tempDirPath, recursive = true)
             monitorActorRef ! EventAtPath(ENTRY_CREATE, tempFileInTempDir)
             expectMsg(tempFileInTempDir)
           }
@@ -418,11 +418,8 @@ class MonitorActorSpec
       new Fixtures {
         val register = RegisterCallback(
           event = ENTRY_CREATE,
-          modifier = None,
-          recursive = false,
-          persistent = false,
           path = tempDirPath,
-          path => testActor ! s"New thing at $path"
+          callback = path => testActor ! s"New thing at $path"
         )
         monitorActorRef ! register
         // Sleep to make sure that the Java WatchService is monitoring the file ...
@@ -430,7 +427,7 @@ class MonitorActorSpec
         val newDir = new File(s"${tempDirPath.toAbsolutePath}/a-new-dir")
         newDir.mkdir()
         // Within 60 seconds is used in case the Java WatchService is acting slow ...
-        within(60 seconds) {
+        within(waitTime) {
           expectMsg(s"New thing at ${newDir.toPath}")
         }
       }
@@ -440,20 +437,17 @@ class MonitorActorSpec
       new Fixtures {
         val register = RegisterCallback(
           event = ENTRY_MODIFY,
-          modifier = None,
-          recursive = false,
-          persistent = false,
           path = tempFile.toPath,
-          path => testActor ! s"Modified file is at $path"
+          callback = path => testActor ! s"Modified file is at $path"
         )
         monitorActorRef ! register
         // Sleep to make sure that the Java WatchService is monitoring the file ...
         Thread.sleep(1000)
         val writer = new BufferedWriter(new FileWriter(tempFile))
         writer.write("There's text in here wee!!")
-        writer.close
+        writer.close()
         // Within 60 seconds is used in case the Java WatchService is acting slow ...
-        within(60 seconds) {
+        within(waitTime) {
           expectMsg(s"Modified file is at ${tempFile.toPath}")
         }
       }
@@ -461,31 +455,85 @@ class MonitorActorSpec
 
   }
 
-  it("should fire proper callbacks when persistent callbacks are registered") {
-    new Fixtures {
-      val register = RegisterCallback(
-        event = ENTRY_MODIFY,
-        modifier = None,
-        recursive = false,
-        persistent = true,
-        path = tempDirPath,
-        path => testActor ! s"Modified file is at $path"
-      )
-      monitorActorRef ! register
-      // Sleep to make sure that the Java WatchService is monitoring the file ...
-      Thread.sleep(1000)
-      val newlyCreatedFile = Files.createTempFile(tempDirPath, "hopefully-works", ".txt")
-      newlyCreatedFile.toFile.deleteOnExit()
-      // Sleep to make sure that the Java WatchService is monitoring the new file ...
-      Thread.sleep(10000)
-      val writer = new BufferedWriter(new FileWriter(newlyCreatedFile.toFile))
-      writer.write("There's text in here wee!!")
-      writer.close
-      // Within 60 seconds is used in case the Java WatchService is acting slow ...
-      within(60 seconds) {
-        expectMsg(s"Modified file is at ${newlyCreatedFile}")
+  describe("persistent registration") {
+
+    it("should fire proper callbacks for modify events on newly created files") {
+      new Fixtures {
+        val register = RegisterCallback(
+          event = ENTRY_MODIFY,
+          path = tempDirPath,
+          callback = path => testActor ! s"Modified file is at $path",
+          persistent = true
+        )
+        monitorActorRef ! register
+        // Sleep to make sure that the Java WatchService is monitoring the file ...
+        Thread.sleep(1000)
+        val newlyCreatedFile = Files.createTempFile(tempDirPath, "hopefully-works", ".txt")
+        newlyCreatedFile.toFile.deleteOnExit()
+        // Sleep to make sure that the Java WatchService is monitoring the new file ...
+        Thread.sleep(10000)
+        val writer = new BufferedWriter(new FileWriter(newlyCreatedFile.toFile))
+        writer.write("There's text in here wee!!")
+        writer.close()
+        // Within 60 seconds is used in case the Java WatchService is acting slow ...
+        within(waitTime) {
+          expectMsg(s"Modified file is at ${newlyCreatedFile}")
+        }
       }
     }
+
+    it("should fire proper callbacks for delete events on newly created files") {
+      new Fixtures {
+        val register = RegisterCallback(
+          event = ENTRY_DELETE,
+          path = tempDirPath,
+          callback = path => testActor ! s"Deleted file is at $path",
+          persistent = true
+        )
+        monitorActorRef ! register
+        // Sleep to make sure that the Java WatchService is monitoring the file ...
+        Thread.sleep(1000)
+        val newDirectory = Files.createTempDirectory(tempDirPath, "new-dir")
+        Thread.sleep(1000)
+        val newlyCreatedFile = Files.createTempFile(newDirectory, "new-file", ".tmp")
+        newDirectory.toFile.deleteOnExit()
+        newlyCreatedFile.toFile.deleteOnExit()
+        // Sleep to make sure that the Java WatchService is monitoring the new file ...
+        Thread.sleep(10000)
+        newlyCreatedFile.toFile.delete()
+        // Within 60 seconds is used in case the Java WatchService is acting slow ...
+        within(waitTime) {
+          expectMsg(s"Deleted file is at ${newlyCreatedFile}")
+        }
+      }
+    }
+
+    it("should fire proper callbacks for create events on newly created directories") {
+      new Fixtures {
+        val register = RegisterCallback(
+          event = ENTRY_CREATE,
+          path = tempDirPath,
+          callback = path => testActor ! s"Created file is at $path",
+          persistent = true
+        )
+        monitorActorRef ! register
+        // Sleep to make sure that the Java WatchService is monitoring the file ...
+        Thread.sleep(10000)
+        val newDirectory = Files.createTempDirectory(tempDirPath, "new-dir")
+        newDirectory.toFile.deleteOnExit()
+        within(waitTime) {
+          expectMsg(s"Created file is at ${newDirectory}")
+        }
+        Thread.sleep(10000)
+        val newlyCreatedFile = Files.createTempFile(newDirectory, "new-file", ".tmp")
+        newlyCreatedFile.toFile.deleteOnExit()
+        // Within 60 seconds is used in case the Java WatchService is acting slow ...
+        within(waitTime) {
+          expectMsg(s"Created file is at ${newlyCreatedFile}")
+        }
+      }
+    }
+
   }
 
   describe("Register with specified modifier") {
@@ -499,23 +547,19 @@ class MonitorActorSpec
           case Some(_) =>
             val registerLOW = RegisterCallback(
               event = ENTRY_MODIFY,
-              modifier = LOW,
-              recursive = false,
-              persistent = false,
               path = tempFile.toPath,
-              path => {
-                timeLOW = System.nanoTime - start
-              }
+              callback = path => {
+              timeLOW = System.nanoTime - start
+            },
+              modifier = LOW
             )
             val registerHIGH = RegisterCallback(
               event = ENTRY_MODIFY,
-              modifier = HIGH,
-              recursive = false,
-              persistent = false,
               path = tempFile.toPath,
-              path => {
-                timeHIGH = System.nanoTime - start
-              }
+              callback = path => {
+              timeHIGH = System.nanoTime - start
+            },
+              modifier = HIGH
             )
 
             start = System.nanoTime
@@ -525,12 +569,12 @@ class MonitorActorSpec
             Thread.sleep(3000)
             val writer = new BufferedWriter(new FileWriter(tempFile))
             writer.write("There's text in here wee!!")
-            writer.close
+            writer.close()
             // Wait 10 seconds for finish callback
             Thread.sleep(10000L)
             // SensitivityWatchEventModifier.HIGH should sensitive than SensitivityWatchEventModifier.LOW
             timeHIGH should be <= timeLOW
-          case None => true should be(true)
+          case None =>
         }
       }
     }
