@@ -84,6 +84,9 @@ val modifyCallbackDirectory: Callback = { path => println(s"Something was modifi
 val desktop = Paths get "/Users/lloyd/Desktop"
 val desktopFile = Paths get "/Users/lloyd/Desktop/test"
 
+/*
+  This will receive callbacks for just the one file
+*/
 fileMonitorActor ! RegisterCallback(
   event = ENTRY_MODIFY,
   path = desktopFile,
