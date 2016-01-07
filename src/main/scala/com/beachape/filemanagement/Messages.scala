@@ -34,8 +34,7 @@ object Messages {
     modifier: Option[Modifier] = None,
     recursive: Boolean = false,
     path: Path,
-    callback: Callback
-  )
+    callback: Callback)
 
   /**
    * Message case class for telling a MonitorActor that the callback contained
@@ -53,8 +52,7 @@ object Messages {
     modifier: Option[Modifier] = None,
     recursive: Boolean = false,
     path: Path,
-    callback: Callback
-  )
+    callback: Callback)
 
   /**
    * Message case class for telling a MonitorActor to un-register a
@@ -72,8 +70,7 @@ object Messages {
   sealed case class UnRegisterCallback(
     event: WatchEvent.Kind[Path],
     recursive: Boolean = false,
-    path: Path
-  )
+    path: Path)
 
   /**
    * Message case class for telling a CallbackActor to perform a callback
