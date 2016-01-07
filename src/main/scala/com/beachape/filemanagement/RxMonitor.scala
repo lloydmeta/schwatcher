@@ -58,8 +58,7 @@ class RxMonitor(actorSystem: ActorSystem) {
     path: Path,
     recursive: Boolean = false,
     persistent: Boolean = false,
-    modifier: Option[Modifier] = None
-  ) {
+    modifier: Option[Modifier] = None) {
     monitorActor ! RegisterBossyCallback(
       event = event,
       modifier = modifier,
@@ -79,8 +78,7 @@ class RxMonitor(actorSystem: ActorSystem) {
     event: WatchEvent.Kind[Path],
     path: Path,
     recursive: Boolean = false,
-    modifier: Option[Modifier] = None
-  ) {
+    modifier: Option[Modifier] = None) {
     monitorActor ! UnRegisterCallback(
       event = event,
       recursive = recursive,

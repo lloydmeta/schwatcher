@@ -57,14 +57,13 @@ class MonitorActorSpec
       path: Path,
       event: WatchEvent.Kind[Path],
       callback: Callback,
-      recursive: Boolean = false
-    ): CallbackRegistryMap = {
+      recursive: Boolean = false): CallbackRegistryMap = {
       val absolutePath = path.toAbsolutePath
       monitorActor invokePrivate newRegistryMap(
         originalMap,
         event, {
-        registry: CallbackRegistry => registry.withCallbackFor(absolutePath, callback, recursive)
-      }
+          registry: CallbackRegistry => registry.withCallbackFor(absolutePath, callback, recursive)
+        }
       )
     }
 
@@ -72,22 +71,20 @@ class MonitorActorSpec
       originalMap: CallbackRegistryMap,
       path: Path,
       event: WatchEvent.Kind[Path],
-      recursive: Boolean = false
-    ): CallbackRegistryMap = {
+      recursive: Boolean = false): CallbackRegistryMap = {
       val absolutePath = path.toAbsolutePath
       monitorActor invokePrivate newRegistryMap(
         originalMap,
         event, {
-        registry: CallbackRegistry => registry.withoutCallbacksFor(absolutePath, recursive)
-      }
+          registry: CallbackRegistry => registry.withoutCallbacksFor(absolutePath, recursive)
+        }
       )
     }
 
     // Recursive version of the same as above
     def addCallbackFor(
       originalMap: CallbackRegistryMap,
-      pathsCallbackRecursive: List[(Path, WatchEvent.Kind[Path], Callback, Boolean)]
-    ): CallbackRegistryMap = {
+      pathsCallbackRecursive: List[(Path, WatchEvent.Kind[Path], Callback, Boolean)]): CallbackRegistryMap = {
       pathsCallbackRecursive.foldLeft(originalMap) {
         case (memo, (path, eventType, callback, recursive)) => addCallbackFor(memo, path, eventType, callback, recursive)
       }
@@ -549,16 +546,16 @@ class MonitorActorSpec
               event = ENTRY_MODIFY,
               path = tempFile.toPath,
               callback = path => {
-              timeLOW = System.nanoTime - start
-            },
+                timeLOW = System.nanoTime - start
+              },
               modifier = LOW
             )
             val registerHIGH = RegisterCallback(
               event = ENTRY_MODIFY,
               path = tempFile.toPath,
               callback = path => {
-              timeHIGH = System.nanoTime - start
-            },
+                timeHIGH = System.nanoTime - start
+              },
               modifier = HIGH
             )
 

@@ -50,8 +50,7 @@ object Messages {
       callback: Callback,
       modifier: Option[Modifier] = None,
       recursive: Boolean = false,
-      persistent: Boolean = false
-  ) extends RegisterCallbackMessage {
+      persistent: Boolean = false) extends RegisterCallbackMessage {
     val bossy = false
   }
 
@@ -73,8 +72,7 @@ object Messages {
       callback: Callback,
       modifier: Option[Modifier] = None,
       recursive: Boolean = false,
-      persistent: Boolean = false
-  ) extends RegisterCallbackMessage {
+      persistent: Boolean = false) extends RegisterCallbackMessage {
     val bossy = true
   }
 
@@ -94,8 +92,7 @@ object Messages {
   sealed case class UnRegisterCallback(
     event: WatchEvent.Kind[Path],
     path: Path,
-    recursive: Boolean = false
-  )
+    recursive: Boolean = false)
 
   /**
    * Message case class for telling a CallbackActor to perform a callback
