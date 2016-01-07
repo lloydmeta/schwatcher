@@ -132,8 +132,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
   private[this] def newCallbackRegistryMap(
     cbRegistryMap: CallbackRegistryMap,
     eventType: WatchEvent.Kind[Path],
-    modify: CallbackRegistry => CallbackRegistry
-  ): CallbackRegistryMap = {
+    modify: CallbackRegistry => CallbackRegistry): CallbackRegistryMap = {
     if (!cbRegistryMap.isDefinedAt(eventType))
       cbRegistryMap
     else {
@@ -152,8 +151,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
   def callbacksFor(
     cbRegistryMap: CallbackRegistryMap,
     eventType: WatchEvent.Kind[Path],
-    path: Path
-  ): Option[Callbacks] = {
+    path: Path): Option[Callbacks] = {
     cbRegistryMap.get(eventType) flatMap { _ callbacksFor (path) }
   }
 
@@ -189,8 +187,7 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
   def processCallbacksFor(
     cbRegistryMap: CallbackRegistryMap,
     event: WatchEvent.Kind[Path],
-    path: Path
-  ): Unit = {
+    path: Path): Unit = {
 
     def processCallbacks(lookupPath: Path): Unit = {
       for {
