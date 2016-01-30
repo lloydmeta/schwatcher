@@ -215,7 +215,10 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
         )
         writer.close()
         val eventList = watchKey.pollEvents()
-        repeatFor(30 seconds, eventList.size >= 1) {
+        /*
+         .size >= 2 because some systems fire multiple entry modifies on update
+          */
+        repeatFor(30 seconds, eventList.size >= 2) {
           eventList.append(watchKey.pollEvents(): _*)
         }
         watchKey.reset()
@@ -226,6 +229,11 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
           eventList2.append(watchKey.pollEvents(): _*)
         }
         watchKey.reset()
+        /*
+          We don't dedupe entry modify events on the WatchServiceTask level
+          So we need do a contains check in case there is a stray entry modify
+          event
+         */
         eventList2 foreach { _.kind() should be(ENTRY_DELETE) }
       }
     }

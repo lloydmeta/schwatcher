@@ -57,11 +57,13 @@ class RxMonitor(actorSystem: ActorSystem) {
     event: WatchEvent.Kind[Path],
     path: Path,
     recursive: Boolean = false,
+    persistent: Boolean = false,
     modifier: Option[Modifier] = None) {
     monitorActor ! RegisterBossyCallback(
       event = event,
       modifier = modifier,
       recursive = recursive,
+      persistent = persistent,
       path = path,
       callback = pushNextPathToSubject(event)
     )

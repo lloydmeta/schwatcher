@@ -11,6 +11,20 @@ import scala.language.existentials
  */
 
 object Messages {
+
+  /**
+   * Base trait for registering callbacks
+   */
+  sealed trait RegisterCallbackMessage {
+    def event: WatchEvent.Kind[Path]
+    def modifier: Option[Modifier]
+    def recursive: Boolean
+    def path: Path
+    def callback: Callback
+    def bossy: Boolean
+    def persistent: Boolean
+  }
+
   /**
    * Message case class for telling a MonitorActor that an
    * event has happened and at what path
@@ -25,16 +39,20 @@ object Messages {
    * path for callback
    *
    * @param event WatchEvent.Kind[Path], one of ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE
-   * @param recursive Boolean to specify to recursively register the callback or not, defaults to false
+   * @param recursive Boolean To recursively register the callback or not, defaults to false
+   * @param persistent Boolean To automatically add the same callback to new files or not, defaults to false
    * @param path Path (Java object) pointing to a file/directory
    * @param callback (Path) => Unit type function
    */
   sealed case class RegisterCallback(
-    event: WatchEvent.Kind[Path],
-    modifier: Option[Modifier] = None,
-    recursive: Boolean = false,
-    path: Path,
-    callback: Callback)
+      event: WatchEvent.Kind[Path],
+      path: Path,
+      callback: Callback,
+      modifier: Option[Modifier] = None,
+      recursive: Boolean = false,
+      persistent: Boolean = false) extends RegisterCallbackMessage {
+    val bossy = false
+  }
 
   /**
    * Message case class for telling a MonitorActor that the callback contained
@@ -44,15 +62,19 @@ object Messages {
    *
    * @param event WatchEvent.Kind[Path], one of ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE
    * @param recursive Boolean to specify to recursively register the callback or not, defaults to false
+   * @param persistent Boolean To automatically add the same callback to new files or not, defaults to false
    * @param path Path (Java object) pointing to a file/directory
    * @param callback (Path) => Unit type function
    */
   sealed case class RegisterBossyCallback(
-    event: WatchEvent.Kind[Path],
-    modifier: Option[Modifier] = None,
-    recursive: Boolean = false,
-    path: Path,
-    callback: Callback)
+      event: WatchEvent.Kind[Path],
+      path: Path,
+      callback: Callback,
+      modifier: Option[Modifier] = None,
+      recursive: Boolean = false,
+      persistent: Boolean = false) extends RegisterCallbackMessage {
+    val bossy = true
+  }
 
   /**
    * Message case class for telling a MonitorActor to un-register a
@@ -69,8 +91,8 @@ object Messages {
    */
   sealed case class UnRegisterCallback(
     event: WatchEvent.Kind[Path],
-    recursive: Boolean = false,
-    path: Path)
+    path: Path,
+    recursive: Boolean = false)
 
   /**
    * Message case class for telling a CallbackActor to perform a callback

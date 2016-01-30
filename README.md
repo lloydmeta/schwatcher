@@ -88,24 +88,21 @@ val desktopFile = Paths get "/Users/lloyd/Desktop/test"
 
 /*
   This will receive callbacks for just the one file
- */
+*/
 fileMonitorActor ! RegisterCallback(
-  ENTRY_MODIFY,
-  None,
-  recursive = false,
+  event = ENTRY_MODIFY,
   path = desktopFile,
-  modifyCallbackFile)
+  callback =  modifyCallbackFile
+  )
 
 /*
   If desktopFile is modified, this will also receive a callback
   it will receive callbacks for everything under the desktop directory
 */
 fileMonitorActor ! RegisterCallback(
-  ENTRY_MODIFY,
-  None,
-  recursive = false,
+  event = ENTRY_MODIFY,
   path = desktop,
-  modifyCallbackDirectory)
+  callback = modifyCallbackDirectory)
 
 
 //modify a monitored file
@@ -178,10 +175,7 @@ Additional library-specific caveats and notes are:
 3. A specific path can have multiple callbacks registered to a file [event types](http://docs.oracle.com/javase/7/docs/api/java/nio/file/StandardWatchEventKinds.html),
    all will be fired.
 4. Callbacks are not guaranteed to be fired in any particular order unless if concurrency is set to 1 on the MonitorActor.
-5. Callbacks that are registered with `recursive=true` are not _persistently-recursive_. That is, they do not propagate
-   to new files or folders created/deleted after registration. Currently, the plan is to have developers handle this themselves
-   in the callback functions.
-6. Any event on a file path will bubble up to its immediate parent folder path. This means that if both a file and it's
+5. Any event on a file path will bubble up to its immediate parent folder path. This means that if both a file and it's
    parent directory are registered for callbacks, both sets of callbacks will be fired.
 
 As a result of note 6, you may want to think twice about registering recursive callbacks for `ENTRY_DELETE` because if a

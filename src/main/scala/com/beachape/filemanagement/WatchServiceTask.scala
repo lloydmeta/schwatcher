@@ -13,9 +13,7 @@ import java.nio.file.WatchEvent.{ Kind, Modifier }
  */
 object WatchServiceTask {
 
-  private val EventAggregationWait: FiniteDuration = 2.seconds
-
-  private val SupportedEvents: Set[Kind[_]] = Set(ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY)
+  val SupportedEvents: Set[Kind[_]] = Set(ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY)
 
   /**
    * Creates a WatchServiceTask tied to an actor
@@ -47,13 +45,6 @@ class WatchServiceTask(notifyActor: ActorRef) extends Runnable {
     try {
       while (!Thread.currentThread().isInterrupted) {
         val key = watchService.take()
-        /*
-          * Sleeping here helps with multiple update events firing due to system-dependent auditing that may
-          * cause update events to be fired.
-          *
-          * See http://stackoverflow.com/questions/16777869/java-7-watchservice-ignoring-multiple-occurrences-of-the-same-event
-         */
-        Thread.sleep(WatchServiceTask.EventAggregationWait.toMillis)
         key.pollEvents().asScala foreach { event =>
           event.kind match {
             // Don't really have a choice here because of type erasure.

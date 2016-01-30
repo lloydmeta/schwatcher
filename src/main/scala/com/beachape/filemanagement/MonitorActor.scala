@@ -3,10 +3,12 @@ package com.beachape.filemanagement
 import akka.actor.{ ActorLogging, Actor, Props }
 import akka.routing.{ SmallestMailboxPool, DefaultResizer }
 import com.beachape.filemanagement.Messages._
-import com.beachape.filemanagement.RegistryTypes.Callbacks
+import com.beachape.filemanagement.RegistryTypes._
 import java.nio.file.StandardWatchEventKinds._
 import java.nio.file.{ Path, WatchEvent }
-import java.nio.file.WatchEvent.Modifier
+import java.nio.file.WatchEvent._
+
+import scala.concurrent.duration._
 
 /**
  * Companion object for creating Monitor actor instances
@@ -18,18 +20,25 @@ object MonitorActor {
    * Factory method for the params required to instantiate a MonitorActor
    *
    * @param concurrency Integer, the number of concurrent threads for handling callbacks
+   * @param dedupeTime Duration, how long to wait between modify event dedupe cycles.
    * @return Props for instantiating a MonitorActor
    */
-  def apply(concurrency: Int = 5) = {
+  def apply(concurrency: Int = 5, dedupeTime: FiniteDuration = 1.5.seconds) = {
     require(concurrency >= 1, s"Callback concurrency requested is $concurrency but it should at least be 1")
-    Props(classOf[MonitorActor], concurrency)
+    Props(classOf[MonitorActor], concurrency, dedupeTime)
   }
 
-  val initialEventTypeCallbackRegistryMap = Map(
+  /**
+   * Initial CallbackRegistry map. Empty by definition
+   */
+  val initialEventTypeCallbackRegistryMap: CallbackRegistryMap = Map(
     ENTRY_CREATE -> CallbackRegistry(),
     ENTRY_MODIFY -> CallbackRegistry(),
     ENTRY_DELETE -> CallbackRegistry()
   )
+
+  private case object FlushTime
+
 }
 
 /**
@@ -38,9 +47,12 @@ object MonitorActor {
  * Should be instantiated with Props provided via companion object factory
  * method
  */
-class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with RecursiveFileActions {
+class MonitorActor(concurrency: Int = 5, dedupeTime: FiniteDuration = 1.5.seconds)
+    extends Actor
+    with ActorLogging
+    with RecursiveFileActions {
 
-  import com.beachape.filemanagement.MonitorActor.CallbackRegistryMap
+  import com.beachape.filemanagement.MonitorActor._
 
   // Smallest mailbox router for callback actors
   private[this] val callbackActors = context.actorOf(
@@ -55,6 +67,16 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
   private[this] val watchServiceTask = new WatchServiceTask(monitorActor)
   private[this] val watchThread = new Thread(watchServiceTask, "WatchService")
 
+  private[this] val flushTrackerCycle = {
+    import context.dispatcher
+    context.system.scheduler.schedule(
+      initialDelay = dedupeTime,
+      interval = dedupeTime,
+      receiver = monitorActor,
+      FlushTime
+    )
+  }
+
   override def preStart() = {
     watchThread.setDaemon(true)
     watchThread.start()
@@ -62,59 +84,90 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
 
   override def postStop() = {
     watchThread.interrupt()
+    flushTrackerCycle.cancel()
   }
 
-  def receive = withCallbackRegistryMap(MonitorActor.initialEventTypeCallbackRegistryMap)
+  def receive = withState(initialEventTypeCallbackRegistryMap, initialEventTypeCallbackRegistryMap, EventTracker())
 
   /**
    * Returns a new Receive that uses a given CallbackRegistryMap
-   * @param currentCallbackRegistryMap
-   * @return
+   *
+   * @param callbackRegistryMap For holding path to callback maps that result in actual user-visible effects
+   * @param internalCallbackRegistryMap For holding path to callback maps that result in internally visible effects (e.g.
+   *                                    implementation persistent callbacks for files that are newly created after callbacks
+   *                                    have been added for a directory)
    */
-  def withCallbackRegistryMap(currentCallbackRegistryMap: CallbackRegistryMap): Receive = {
-    case EventAtPath(event, path) => {
-      log.debug(s"Event $event at path: $path")
-      // Ensure that only absolute paths are used
-      val absolutePath = path.toAbsolutePath
-      processCallbacksFor(currentCallbackRegistryMap, event.asInstanceOf[WatchEvent.Kind[Path]], absolutePath)
-    }
-
-    case RegisterCallback(event, modifier, recursive, path, callback) => {
-      // Ensure that only absolute paths are used
-      val absolutePath = path.toAbsolutePath
-      val newCallbackMap = newCallbackRegistryMap(
-        currentCallbackRegistryMap,
-        event,
-        _ withCallbackFor (absolutePath, callback, recursive)
+  private[this] def withState(
+    callbackRegistryMap: CallbackRegistryMap,
+    internalCallbackRegistryMap: CallbackRegistryMap,
+    eventTracker: EventTracker): Receive = {
+    case ev @ EventAtPath(event, _) if WatchServiceTask.SupportedEvents.contains(event) => {
+      /*
+        * We dedup ENTRY_MODIFY events by tracking them. If they already exist in the tracker,
+        * the existing event is popped, and we run callbacks for them, updating this actor
+        * to the latest tracker state.
+        *
+        * The tracker is flushed periodically based on the dedupeTime constructor parameter in case
+        * we have orphaned events (due to different systems and JVM implementations).
+      */
+      val (eventsToProcess, updatedTracker) = if (event == ENTRY_MODIFY) {
+        eventTracker.popExistingOrAdd(ev)
+      } else (Seq(ev), eventTracker)
+      performCallbacks(
+        eventsToProcess = eventsToProcess,
+        callbackRegistryMap = callbackRegistryMap,
+        internalCallbackRegistryMap = internalCallbackRegistryMap
       )
-      addPathToWatchServiceTask(newCallbackMap, modifier, absolutePath, recursive)
-      context.become(withCallbackRegistryMap(newCallbackMap))
-    }
-
-    // This handler actually first unregisters and then registers the given path
-    case RegisterBossyCallback(event, modifier, recursive, path, callback) => {
-      // Ensure that only absolute paths are used
-      val absolutePath = path.toAbsolutePath
-      // Generate a map with the specific path requested
-      val withNewPathRegistryMap = newCallbackRegistryMap(
-        currentCallbackRegistryMap,
-        event,
-        _ withCallbackFor (absolutePath, callback, recursive, true)
+      context.become(
+        withState(
+          callbackRegistryMap = callbackRegistryMap,
+          internalCallbackRegistryMap = internalCallbackRegistryMap,
+          eventTracker = updatedTracker
+        )
       )
-      addPathToWatchServiceTask(withNewPathRegistryMap, modifier, absolutePath, recursive)
-      context.become(withCallbackRegistryMap(withNewPathRegistryMap))
     }
 
-    case UnRegisterCallback(event, recursive, path) => {
+    case m: RegisterCallbackMessage => {
+      addCallback(
+        callbackRegistryMap = callbackRegistryMap,
+        internalCallbackRegistryMap = internalCallbackRegistryMap,
+        eventTracker = eventTracker,
+        registerMessage = m
+      )
+    }
+
+    case UnRegisterCallback(event, path, recursive) => {
       // Ensure that only absolute paths are used
       val absolutePath = path.toAbsolutePath
       context.become(
-        withCallbackRegistryMap(
-          newCallbackRegistryMap(
-            currentCallbackRegistryMap,
+        withState(
+          callbackRegistryMap = newCallbackRegistryMap(
+            callbackRegistryMap,
             event,
-            _ withoutCallbacksFor (absolutePath, recursive)
-          )
+            _.withoutCallbacksFor(absolutePath, recursive)
+          ),
+          internalCallbackRegistryMap = newCallbackRegistryMap(
+            internalCallbackRegistryMap,
+            event,
+            _.withoutCallbacksFor(absolutePath, recursive)
+          ),
+          eventTracker = eventTracker
+        )
+      )
+    }
+
+    case FlushTime => {
+      val (eventsToProcess, newTracker) = eventTracker.popOlderThan(dedupeTime)
+      performCallbacks(
+        eventsToProcess = eventsToProcess,
+        callbackRegistryMap = callbackRegistryMap,
+        internalCallbackRegistryMap = internalCallbackRegistryMap
+      )
+      context.become(
+        withState(
+          callbackRegistryMap = callbackRegistryMap,
+          internalCallbackRegistryMap = internalCallbackRegistryMap,
+          eventTracker = newTracker
         )
       )
     }
@@ -124,10 +177,6 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
 
   /**
    * Return a new CallbackRegistryMap for a given Event type
-   * @param cbRegistryMap
-   * @param eventType WatchEvent.Kind[Path] Java7 Event type
-   * @param modify a function to update the CallbackRegistry
-   * @return Map[WatchEvent.Kind[Path], CallbackRegistry]
    */
   private[this] def newCallbackRegistryMap(
     cbRegistryMap: CallbackRegistryMap,
@@ -148,31 +197,33 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
    * @param path Path (Java type) to be registered
    * @return Option[Callbacks] for the path at the event type (Option[List[Path => Unit]])
    */
-  def callbacksFor(
+  private[filemanagement] def callbacksFor(
     cbRegistryMap: CallbackRegistryMap,
     eventType: WatchEvent.Kind[Path],
     path: Path): Option[Callbacks] = {
-    cbRegistryMap.get(eventType) flatMap { _ callbacksFor (path) }
+    cbRegistryMap
+      .get(eventType)
+      .flatMap(_.callbacksFor(path))
   }
 
   /**
    * Adds a path to be monitored by the WatchServiceTask. If specified, all
    * subdirectories will be recursively added to the WatchServiceTask.
-   *
-   * @param cbRegistryMap the current CallbackRegistryMap
-   * @param recursive Boolean watch subdirectories of the given path
-   * @param path Path (Java type) to be registered
    */
-  private[this] def addPathToWatchServiceTask(cbRegistryMap: CallbackRegistryMap, modifier: Option[Modifier], path: Path, recursive: Boolean = false) {
+  private[this] def addPathToWatchServiceTask(callbackMap: CallbackRegistryMap, internalCallbackMap: CallbackRegistryMap, modifier: Option[Modifier], path: Path, recursive: Boolean = false) {
     log.debug(s"Adding $path to WatchServiceTask")
-    val eventTypes = (for {
-      (eventType, registry) <- cbRegistryMap
+    val eventTypes = for {
+      cbMap <- Seq(callbackMap, internalCallbackMap)
+      (eventType, registry) <- cbMap
       if registry.callbacksFor(path).isDefined
-    } yield eventType).toSeq
-    watchServiceTask.watch(path, modifier, eventTypes: _*)
-    if (recursive) forEachDir(path) { subDir =>
-      log.debug(s"Adding $subDir to WatchServiceTask")
-      watchServiceTask.watch(subDir, modifier, eventTypes: _*)
+    } yield eventType
+    if (eventTypes.nonEmpty) {
+      val distinctEventTypes = eventTypes.distinct
+      watchServiceTask.watch(path, modifier, distinctEventTypes: _*)
+      if (recursive) forEachDir(path) { subDir =>
+        log.debug(s"Adding $subDir to WatchServiceTask")
+        watchServiceTask.watch(subDir, modifier, distinctEventTypes: _*)
+      }
     }
   }
 
@@ -184,28 +235,125 @@ class MonitorActor(concurrency: Int = 5) extends Actor with ActorLogging with Re
    * @param path Path (Java type) to be registered
    * @return Unit
    */
-  def processCallbacksFor(
+  private[filemanagement] def processCallbacksFor(
     cbRegistryMap: CallbackRegistryMap,
+    internalCbRegistryMap: CallbackRegistryMap,
     event: WatchEvent.Kind[Path],
     path: Path): Unit = {
 
     def processCallbacks(lookupPath: Path): Unit = {
-      for {
-        callbacks <- callbacksFor(cbRegistryMap, event, lookupPath)
-        callback <- callbacks
-      } {
-        log.debug(s"Sending callback for path: $path")
+      val userCallbacks = callbacksFor(cbRegistryMap, event, lookupPath).toSeq
+      val internalCallbacks = callbacksFor(internalCbRegistryMap, event, lookupPath).toSeq
+      (userCallbacks ++ internalCallbacks).flatten.foreach { callback =>
         callbackActors ! PerformCallback(path, callback)
       }
     }
-
     processCallbacks(path)
-
     /*
       If event is ENTRY_DELETE or ENTRY_CREATE or the path is a file, check for callbacks that
       need to be fired for the directory the file is in
     */
-    if (event == ENTRY_DELETE || event == ENTRY_CREATE || path.toFile.isFile)
+    if (event == ENTRY_DELETE || event == ENTRY_CREATE || path.toFile.isFile) {
       processCallbacks(path.getParent)
+    }
   }
+
+  private[this] def addCallback(
+    callbackRegistryMap: CallbackRegistryMap,
+    internalCallbackRegistryMap: CallbackRegistryMap,
+    eventTracker: EventTracker,
+    registerMessage: RegisterCallbackMessage): Unit = {
+    // Ensure that only absolute paths are used
+    val absolutePath = registerMessage.path.toAbsolutePath
+    // Generate a map with the specific path requested
+    val withNewCallbackMap = newCallbackRegistryMap(
+      callbackRegistryMap,
+      registerMessage.event,
+      _.withCallbackFor(
+        path = absolutePath,
+        callback = registerMessage.callback,
+        recursive = registerMessage.recursive,
+        bossy = registerMessage.bossy
+      )
+    )
+    val withNewInternalMap = withPersistentCallbacks(internalCallbackRegistryMap, absolutePath, registerMessage)
+    addPathToWatchServiceTask(
+      callbackMap = withNewCallbackMap,
+      internalCallbackMap = withNewInternalMap,
+      modifier = registerMessage.modifier,
+      path = absolutePath,
+      recursive = registerMessage.recursive
+    )
+    context.become(
+      withState(
+        callbackRegistryMap = withNewCallbackMap,
+        internalCallbackRegistryMap = withNewInternalMap,
+        eventTracker = eventTracker
+      )
+    )
+  }
+
+  private[this] def withPersistentCallbacks(
+    withNewPathRegistryMap: CallbackRegistryMap,
+    absolutePath: Path,
+    registerMessage: RegisterCallbackMessage) = {
+    if (registerMessage.persistent && absolutePath.toFile.isDirectory) {
+      val persistentCallback = persistentRegisterCallback(registerMessage)
+      val persistentCreate = newCallbackRegistryMap(
+        withNewPathRegistryMap,
+        ENTRY_CREATE,
+        _.withCallbackFor(
+          path = absolutePath,
+          callback = persistentCallback,
+          recursive = registerMessage.recursive,
+          bossy = true
+        )
+      )
+      val persistentUnregisterCallback = persistentUnRegister(registerMessage)
+      newCallbackRegistryMap(
+        persistentCreate,
+        ENTRY_DELETE,
+        _.withCallbackFor(
+          path = absolutePath,
+          callback = persistentUnregisterCallback,
+          recursive = registerMessage.recursive,
+          bossy = true
+        )
+      )
+    } else withNewPathRegistryMap
+  }
+
+  private[this] def performCallbacks(
+    eventsToProcess: Seq[EventAtPath],
+    callbackRegistryMap: CallbackRegistryMap,
+    internalCallbackRegistryMap: CallbackRegistryMap): Unit = {
+    eventsToProcess.foreach {
+      case EventAtPath(event, path) =>
+        log.debug(s"Event $event at path: $path")
+        val absolutePath = path.toAbsolutePath
+        processCallbacksFor(
+          cbRegistryMap = callbackRegistryMap,
+          internalCbRegistryMap = internalCallbackRegistryMap,
+          event = event.asInstanceOf[WatchEvent.Kind[Path]],
+          path = absolutePath
+        )
+    }
+  }
+
+  private[this] def persistentRegisterCallback(m: RegisterCallbackMessage): Callback = { p =>
+    val registerMessage = m match {
+      case m: RegisterCallback => m.copy(path = p)
+      case m: RegisterBossyCallback => m.copy(path = p)
+    }
+    monitorActor ! registerMessage
+  }
+
+  private[this] def persistentUnRegister(m: RegisterCallbackMessage): Callback = { p =>
+    monitorActor ! UnRegisterCallback(
+      event = m.event,
+      recursive = m.recursive,
+      path = m.path
+    )
+  }
+
 }
