@@ -51,6 +51,8 @@ class MonitorActorSpec
     val HIGH = get_com_sun_nio_file_SensitivityWatchEventModifier("HIGH")
     val LOW = get_com_sun_nio_file_SensitivityWatchEventModifier("LOW")
 
+    val me: Fixtures = this
+
     // Test helper methods
     def addCallbackFor(
       originalMap: CallbackRegistryMap,
@@ -411,124 +413,235 @@ class MonitorActorSpec
 
   describe("integration testing") {
 
-    it("should fire the appropriate callback if a monitored directory has a directory created inside of it") {
-      new Fixtures {
-        val register = RegisterCallback(
-          event = ENTRY_CREATE,
-          path = tempDirPath,
-          callback = path => testActor ! s"New thing at $path"
-        )
-        monitorActorRef ! register
-        // Sleep to make sure that the Java WatchService is monitoring the file ...
-        Thread.sleep(1000)
-        val newDir = new File(s"${tempDirPath.toAbsolutePath}/a-new-dir")
-        newDir.mkdir()
-        // Within 60 seconds is used in case the Java WatchService is acting slow ...
-        within(waitTime) {
-          expectMsg(s"New thing at ${newDir.toPath}")
+    describe("file created in a nested directory") {
+
+      def testRegistration[A](register: Fixtures => RegisterCallbackMessage, expectedMsg: Path => A): Unit = {
+        new Fixtures {
+          monitorActorRef ! register(me)
+          // Sleep to make sure that the Java WatchService is monitoring the file ...
+          Thread.sleep(1000)
+          val newDir = new File(s"${tempDirPath.toAbsolutePath}/a-new-dir")
+          newDir.mkdir()
+          // Within 60 seconds is used in case the Java WatchService is acting slow ...
+          within(waitTime) {
+            expectMsg(expectedMsg(newDir.toPath))
+          }
         }
       }
+
+      it("should fire the appropriate callback") {
+        testRegistration(
+          fixture => RegisterCallback(
+            event = ENTRY_CREATE,
+            path = fixture.tempDirPath,
+            callback = path => fixture.testActor ! s"New thing at $path"
+          ),
+          path => s"New thing at $path"
+        )
+      }
+
+      it("should forward the message to the appropriate actor") {
+        testRegistration(
+          fixture => RegisterSubscriber(
+            event = ENTRY_CREATE,
+            path = fixture.tempDirPath,
+            subscriber = fixture.testActor
+          ),
+          path => EventAtPath(ENTRY_CREATE, path)
+        )
+      }
+
     }
 
-    it("should fire the appropriate callback if a monitored file has been modified") {
-      new Fixtures {
-        val register = RegisterCallback(
-          event = ENTRY_MODIFY,
-          path = tempFile.toPath,
-          callback = path => testActor ! s"Modified file is at $path"
-        )
-        monitorActorRef ! register
-        // Sleep to make sure that the Java WatchService is monitoring the file ...
-        Thread.sleep(1000)
-        val writer = new BufferedWriter(new FileWriter(tempFile))
-        writer.write("There's text in here wee!!")
-        writer.close()
-        // Within 60 seconds is used in case the Java WatchService is acting slow ...
-        within(waitTime) {
-          expectMsg(s"Modified file is at ${tempFile.toPath}")
+    describe("file modified") {
+
+      def testRegistration[A](register: Fixtures => RegisterCallbackMessage, expectedMsg: Path => A): Unit = {
+        new Fixtures {
+          monitorActorRef ! register(me)
+          // Sleep to make sure that the Java WatchService is monitoring the file ...
+          Thread.sleep(1000)
+          val writer = new BufferedWriter(new FileWriter(tempFile))
+          writer.write("There's text in here wee!!")
+          writer.close()
+          // Within 60 seconds is used in case the Java WatchService is acting slow ...
+          within(waitTime) {
+            expectMsg(expectedMsg(tempFile.toPath))
+          }
         }
       }
+
+      it("should fire the appropriate callback") {
+        testRegistration(
+          fixture => RegisterCallback(
+            event = ENTRY_MODIFY,
+            path = fixture.tempFile.toPath,
+            callback = path => fixture.testActor ! s"Modified file is at $path"
+          ),
+          path => s"Modified file is at $path"
+        )
+      }
+
+      it("should forward the message to the appropriate actor") {
+        testRegistration(
+          fixture => RegisterSubscriber(
+            event = ENTRY_MODIFY,
+            path = fixture.tempFile.toPath,
+            subscriber = fixture.testActor
+          ),
+          path => EventAtPath(ENTRY_MODIFY, path)
+        )
+      }
+
     }
 
   }
 
   describe("persistent registration") {
 
-    it("should fire proper callbacks for modify events on newly created files") {
-      new Fixtures {
-        val register = RegisterCallback(
-          event = ENTRY_MODIFY,
-          path = tempDirPath,
-          callback = path => testActor ! s"Modified file is at $path",
-          persistent = true
-        )
-        monitorActorRef ! register
-        // Sleep to make sure that the Java WatchService is monitoring the file ...
-        Thread.sleep(1000)
-        val newlyCreatedFile = Files.createTempFile(tempDirPath, "hopefully-works", ".txt")
-        newlyCreatedFile.toFile.deleteOnExit()
-        // Sleep to make sure that the Java WatchService is monitoring the new file ...
-        Thread.sleep(10000)
-        val writer = new BufferedWriter(new FileWriter(newlyCreatedFile.toFile))
-        writer.write("There's text in here wee!!")
-        writer.close()
-        // Within 60 seconds is used in case the Java WatchService is acting slow ...
-        within(waitTime) {
-          expectMsg(s"Modified file is at ${newlyCreatedFile}")
+    describe("for modify events on newly created files") {
+
+      def testRegistration[A](register: Fixtures => RegisterCallbackMessage, expectedMsg: Path => A): Unit = {
+        new Fixtures {
+          monitorActorRef ! register(me)
+          // Sleep to make sure that the Java WatchService is monitoring the file ...
+          Thread.sleep(1000)
+          val newlyCreatedFile = Files.createTempFile(tempDirPath, "hopefully-works", ".txt")
+          newlyCreatedFile.toFile.deleteOnExit()
+          // Sleep to make sure that the Java WatchService is monitoring the new file ...
+          Thread.sleep(10000)
+          val writer = new BufferedWriter(new FileWriter(newlyCreatedFile.toFile))
+          writer.write("There's text in here wee!!")
+          writer.close()
+          // Within 60 seconds is used in case the Java WatchService is acting slow ...
+          within(waitTime) {
+            expectMsg(expectedMsg(newlyCreatedFile))
+          }
         }
       }
+
+      it("should fire proper callbacks for modify events") {
+        testRegistration(
+          fixture => {
+            RegisterCallback(
+              event = ENTRY_MODIFY,
+              path = fixture.tempDirPath,
+              callback = path => fixture.testActor ! s"Modified file is at $path",
+              persistent = true
+            )
+          },
+          path => s"Modified file is at $path"
+        )
+      }
+
+      it("should forward to the proper ActorRef for modify events") {
+        testRegistration(
+          fixture =>
+            RegisterSubscriber(
+              event = ENTRY_MODIFY,
+              path = fixture.tempDirPath,
+              subscriber = fixture.testActor,
+              persistent = true
+            ),
+          path => EventAtPath(ENTRY_MODIFY, path)
+        )
+      }
+
     }
 
-    it("should fire proper callbacks for delete events on newly created files") {
-      new Fixtures {
-        val register = RegisterCallback(
-          event = ENTRY_DELETE,
-          path = tempDirPath,
-          callback = path => testActor ! s"Deleted file is at $path",
-          persistent = true
-        )
-        monitorActorRef ! register
-        // Sleep to make sure that the Java WatchService is monitoring the file ...
-        Thread.sleep(1000)
-        val newDirectory = Files.createTempDirectory(tempDirPath, "new-dir")
-        Thread.sleep(1000)
-        val newlyCreatedFile = Files.createTempFile(newDirectory, "new-file", ".tmp")
-        newDirectory.toFile.deleteOnExit()
-        newlyCreatedFile.toFile.deleteOnExit()
-        // Sleep to make sure that the Java WatchService is monitoring the new file ...
-        Thread.sleep(10000)
-        newlyCreatedFile.toFile.delete()
-        // Within 60 seconds is used in case the Java WatchService is acting slow ...
-        within(waitTime) {
-          expectMsg(s"Deleted file is at ${newlyCreatedFile}")
+    describe("deletion on newly created files") {
+
+      def testRegistration[A](register: Fixtures => RegisterCallbackMessage, expectedMsg: Path => A): Unit = {
+        new Fixtures {
+          monitorActorRef ! register(me)
+          // Sleep to make sure that the Java WatchService is monitoring the file ...
+          Thread.sleep(1000)
+          val newDirectory = Files.createTempDirectory(tempDirPath, "new-dir")
+          Thread.sleep(1000)
+          val newlyCreatedFile = Files.createTempFile(newDirectory, "new-file", ".tmp")
+          newDirectory.toFile.deleteOnExit()
+          newlyCreatedFile.toFile.deleteOnExit()
+          // Sleep to make sure that the Java WatchService is monitoring the new file ...
+          Thread.sleep(10000)
+          newlyCreatedFile.toFile.delete()
+          // Within 60 seconds is used in case the Java WatchService is acting slow ...
+          within(waitTime) {
+            expectMsg(expectedMsg(newlyCreatedFile))
+          }
         }
       }
+
+      it("should fire the proper callback") {
+        testRegistration(
+          fixture => RegisterCallback(
+            event = ENTRY_DELETE,
+            path = fixture.tempDirPath,
+            callback = path => fixture.testActor ! s"Deleted file is at $path",
+            persistent = true
+          ),
+          path => s"Deleted file is at $path"
+        )
+      }
+
+      it("should forward the message to the appropriate actor") {
+        testRegistration(
+          fixture => RegisterSubscriber(
+            event = ENTRY_DELETE,
+            path = fixture.tempDirPath,
+            subscriber = fixture.testActor,
+            persistent = true
+          ),
+          path => EventAtPath(ENTRY_DELETE, path)
+        )
+      }
+
     }
 
-    it("should fire proper callbacks for create events on newly created directories") {
-      new Fixtures {
-        val register = RegisterCallback(
-          event = ENTRY_CREATE,
-          path = tempDirPath,
-          callback = path => testActor ! s"Created file is at $path",
-          persistent = true
-        )
-        monitorActorRef ! register
-        // Sleep to make sure that the Java WatchService is monitoring the file ...
-        Thread.sleep(10000)
-        val newDirectory = Files.createTempDirectory(tempDirPath, "new-dir")
-        newDirectory.toFile.deleteOnExit()
-        within(waitTime) {
-          expectMsg(s"Created file is at ${newDirectory}")
-        }
-        Thread.sleep(10000)
-        val newlyCreatedFile = Files.createTempFile(newDirectory, "new-file", ".tmp")
-        newlyCreatedFile.toFile.deleteOnExit()
-        // Within 60 seconds is used in case the Java WatchService is acting slow ...
-        within(waitTime) {
-          expectMsg(s"Created file is at ${newlyCreatedFile}")
+    describe("creation within newly created directories") {
+
+      def testRegistration[A](register: Fixtures => RegisterCallbackMessage, expectedMsg: Path => A): Unit = {
+        new Fixtures {
+          monitorActorRef ! register(me)
+          // Sleep to make sure that the Java WatchService is monitoring the file ...
+          Thread.sleep(10000)
+          val newDirectory = Files.createTempDirectory(tempDirPath, "new-dir")
+          newDirectory.toFile.deleteOnExit()
+          within(waitTime) {
+            expectMsg(expectedMsg(newDirectory))
+          }
+          Thread.sleep(10000)
+          val newlyCreatedFile = Files.createTempFile(newDirectory, "new-file", ".tmp")
+          newlyCreatedFile.toFile.deleteOnExit()
+          // Within 60 seconds is used in case the Java WatchService is acting slow ...
+          within(waitTime) {
+            expectMsg(expectedMsg(newlyCreatedFile))
+          }
         }
       }
+
+      it("should fire the proper callback") {
+        testRegistration(
+          fixture => RegisterCallback(
+            event = ENTRY_CREATE,
+            path = fixture.tempDirPath,
+            callback = path => fixture.testActor ! s"Created file is at $path",
+            persistent = true
+          ),
+          path => s"Created file is at $path"
+        )
+      }
+
+      it("should forward the message to the appropriate actor") {
+        testRegistration(
+          fixture => RegisterSubscriber(
+            event = ENTRY_CREATE,
+            path = fixture.tempDirPath,
+            subscriber = fixture.testActor,
+            persistent = true
+          ),
+          path => EventAtPath(ENTRY_CREATE, path)
+        )
+      }
+
     }
 
   }

@@ -172,7 +172,7 @@ class MonitorActor(concurrency: Int = 5, dedupeTime: FiniteDuration = 1.5.second
       )
     }
 
-    case _ => log.error("MonitorActor received an unexpected message :( !")
+    case unexpected => log.error(s"MonitorActor received an unexpected message :( !\n\n $unexpected")
   }
 
   /**
@@ -344,6 +344,8 @@ class MonitorActor(concurrency: Int = 5, dedupeTime: FiniteDuration = 1.5.second
     val registerMessage = m match {
       case m: RegisterCallback => m.copy(path = p)
       case m: RegisterBossyCallback => m.copy(path = p)
+      case m: RegisterSubscriber => m.copy(path = p)
+      case m: RegisterBossySubscriber => m.copy(path = p)
     }
     monitorActor ! registerMessage
   }
