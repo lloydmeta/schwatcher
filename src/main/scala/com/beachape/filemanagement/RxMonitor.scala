@@ -58,7 +58,7 @@ class RxMonitor(actorSystem: ActorSystem) {
     path: Path,
     recursive: Boolean = false,
     persistent: Boolean = false,
-    modifier: Option[Modifier] = None) {
+    modifier: Option[Modifier] = None): Unit = {
     monitorActor ! RegisterBossyCallback(
       event = event,
       modifier = modifier,
@@ -78,7 +78,7 @@ class RxMonitor(actorSystem: ActorSystem) {
     event: WatchEvent.Kind[Path],
     path: Path,
     recursive: Boolean = false,
-    modifier: Option[Modifier] = None) {
+    modifier: Option[Modifier] = None): Unit = {
     monitorActor ! UnRegisterCallback(
       event = event,
       recursive = recursive,
@@ -90,7 +90,7 @@ class RxMonitor(actorSystem: ActorSystem) {
    * Stops any kind of monitoring and signals to the observers of this
    * RxMonitor instance that the Observable is completed.
    */
-  def stop() {
+  def stop(): Unit = {
     monitorActor ! PoisonPill
     rxSubject.onCompleted()
   }

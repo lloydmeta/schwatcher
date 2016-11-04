@@ -210,7 +210,7 @@ class MonitorActor(concurrency: Int = 5, dedupeTime: FiniteDuration = 1.5.second
    * Adds a path to be monitored by the WatchServiceTask. If specified, all
    * subdirectories will be recursively added to the WatchServiceTask.
    */
-  private[this] def addPathToWatchServiceTask(callbackMap: CallbackRegistryMap, internalCallbackMap: CallbackRegistryMap, modifier: Option[Modifier], path: Path, recursive: Boolean = false) {
+  private[this] def addPathToWatchServiceTask(callbackMap: CallbackRegistryMap, internalCallbackMap: CallbackRegistryMap, modifier: Option[Modifier], path: Path, recursive: Boolean = false): Unit = {
     log.debug(s"Adding $path to WatchServiceTask")
     val eventTypes = for {
       cbMap <- Seq(callbackMap, internalCallbackMap)

@@ -37,7 +37,7 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
     watchServiceTask.stopService()
   }
 
-  private def repeatFor(duration: Duration, orUntil: => Boolean = false)(f: => Unit) {
+  private def repeatFor(duration: Duration, orUntil: => Boolean = false)(f: => Unit): Unit = {
     var timeRemaining = duration
     while (!orUntil && timeRemaining.toMillis > 0) {
       f
