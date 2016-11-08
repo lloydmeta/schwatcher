@@ -14,7 +14,7 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "3.0.0" % "test",
   "com.typesafe.akka" %% "akka-testkit" % "2.4.12" % "test",
   "com.typesafe.akka" %% "akka-actor" % "2.4.12",
-  "io.reactivex" %% "rxscala" % "0.26.3"
+  "io.reactivex" %% "rxscala" % "0.26.4"
 )
 
 publishTo := {
