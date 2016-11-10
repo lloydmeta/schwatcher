@@ -2,7 +2,7 @@ language: scala
 
 jdk:
   - oraclejdk8
-WatchServiceTaskSpec
+
 scala:
   - 2.11.8
   - 2.12.0
