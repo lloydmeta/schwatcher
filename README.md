@@ -21,7 +21,7 @@ fired. Alternatively, use the Observable interface to register for notifications
 The goal of Schwatcher is to facilitate the use of the Java7 API in Scala in a simple way that is in line with the functional
 programming paradigm.
 
-__As of now, only Scala versions 2.11.x are supported__ (Akka 2.4.x dropped support for 2.10.x)
+__As of now, Scala 2.11.x and 2.12.x are supported__ (Akka 2.4.x dropped support for 2.10.x)
 
 Installation
 ------------
@@ -35,7 +35,7 @@ libraryDependencies += "com.beachape.filemanagement" %% "schwatcher" % "0.3.2"
 If the above does not work because it cannot be resolved, its likely because it hasn't been synced to Maven central yet.
 In that case, download a SNAPSHOT release of the same version by adding this to `build.sbt`
 
-```
+```scala
 resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 
 libraryDependencies += "com.beachape.filemanagement" %% "schwatcher" % "0.3.2-SNAPSHOT"
