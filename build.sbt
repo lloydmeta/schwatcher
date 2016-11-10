@@ -2,24 +2,24 @@ name := "schwatcher"
 
 version := "0.3.2-SNAPSHOT"
 
-scalaVersion := "2.11.7"
+scalaVersion := "2.11.8"
 
-crossScalaVersions := Seq("2.11.7")
+crossScalaVersions := Seq("2.11.8", "2.12.0")
 
 crossVersion := CrossVersion.binary
 
 resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
 
 libraryDependencies ++= Seq(
-  "org.scalatest" %% "scalatest" % "2.2.6" % "test",
-  "com.typesafe.akka" %% "akka-testkit" % "2.4.1" % "test",
-  "com.typesafe.akka" %% "akka-actor" % "2.4.1",
-  "io.reactivex" %% "rxscala" % "0.25.1"
+  "org.scalatest" %% "scalatest" % "3.0.0" % "test",
+  "com.typesafe.akka" %% "akka-testkit" % "2.4.12" % "test",
+  "com.typesafe.akka" %% "akka-actor" % "2.4.12",
+  "io.reactivex" %% "rxscala" % "0.26.4"
 )
 
-publishTo <<= version { v: String =>
+publishTo := {
   val nexus = "https://oss.sonatype.org/"
-  if (v.trim.endsWith("SNAPSHOT"))
+  if (version.value.trim.endsWith("SNAPSHOT"))
     Some("snapshots" at nexus + "content/repositories/snapshots")
   else
     Some("releases" at nexus + "service/local/staging/deploy/maven2")
@@ -55,4 +55,21 @@ pomExtra := (
       <url>https://beachape.com</url>
     </developer>
   </developers>
+)
+
+scalacOptions ++= Seq(
+  "-deprecation",
+  "-encoding", "UTF-8",       // yes, this is 2 args
+  "-feature",
+  "-language:existentials",
+  "-language:higherKinds",
+  "-language:implicitConversions",
+  "-unchecked",
+  "-Xfatal-warnings",
+  "-Xlint",
+  "-Yno-adapted-args",
+  "-Ywarn-dead-code",        // N.B. doesn't work well with the ??? hole
+  "-Ywarn-numeric-widen",
+  "-Xfuture",
+  "-Ywarn-unused-import"     // 2.11 only
 )

@@ -1,7 +1,6 @@
 package com.beachape.filemanagement
 
 import akka.actor.ActorRef
-import scala.concurrent.duration._
 import collection.JavaConverters._
 import com.beachape.filemanagement.Messages.EventAtPath
 import java.nio.file.StandardWatchEventKinds._
@@ -41,7 +40,7 @@ class WatchServiceTask(notifyActor: ActorRef) extends Runnable {
    * is required so that it can be passed into a Thread object and be run
    * when #start is called on the thread object
    */
-  def run() {
+  def run(): Unit = {
     try {
       while (!Thread.currentThread().isInterrupted) {
         val key = watchService.take()
@@ -121,7 +120,7 @@ class WatchServiceTask(notifyActor: ActorRef) extends Runnable {
   /**
    * Stops the WatchService current
    */
-  def stopService() {
+  def stopService(): Unit = {
     watchService.close()
   }
 }

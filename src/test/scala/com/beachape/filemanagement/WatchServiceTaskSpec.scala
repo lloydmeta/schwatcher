@@ -2,7 +2,7 @@ package com.beachape.filemanagement
 
 import akka.actor.{ ActorSystem, Actor }
 import akka.testkit.{ TestActorRef, TestKit }
-import collection.JavaConversions._
+import scala.collection.JavaConverters._
 import java.io.{ FileWriter, BufferedWriter }
 import java.nio.file.StandardWatchEventKinds._
 import java.nio.file.{ Path, Files }
@@ -37,7 +37,7 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
     watchServiceTask.stopService()
   }
 
-  private def repeatFor(duration: Duration, orUntil: => Boolean = false)(f: => Unit) {
+  private def repeatFor(duration: Duration, orUntil: => Boolean = false)(f: => Unit): Unit = {
     var timeRemaining = duration
     while (!orUntil && timeRemaining.toMillis > 0) {
       f
@@ -53,9 +53,9 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
       it("should cause ENTRY_CREATE events to be detectable for a directory path") {
         val Some(watchKey) = watchServiceTask.watch(tempDirPath, None, ENTRY_CREATE)
         Files.createTempFile(tempDirPath, "hello", ".there2").toFile.deleteOnExit()
-        val eventList = watchKey.pollEvents()
-        repeatFor(30 seconds, eventList.size >= 1) {
-          eventList.append(watchKey.pollEvents(): _*)
+        val eventList = watchKey.pollEvents().asScala
+        repeatFor(30 seconds, eventList.nonEmpty) {
+          eventList.append(watchKey.pollEvents().asScala: _*)
         }
         watchKey.reset()
         eventList foreach { _.kind() should be(ENTRY_CREATE) }
@@ -64,9 +64,9 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
       it("should cause ENTRY_CREATE events to be detectable for a file path") {
         val Some(watchKey) = watchServiceTask.watch(tempFileInTempDir, None, ENTRY_CREATE)
         Files.createTempFile(tempDirPath, "hello", ".there2").toFile.deleteOnExit()
-        val eventList = watchKey.pollEvents()
-        repeatFor(30 seconds, eventList.size >= 1) {
-          eventList.append(watchKey.pollEvents(): _*)
+        val eventList = watchKey.pollEvents().asScala
+        repeatFor(30 seconds, eventList.nonEmpty) {
+          eventList.append(watchKey.pollEvents().asScala: _*)
         }
         watchKey.reset()
         eventList foreach { _.kind() should be(ENTRY_CREATE) }
@@ -78,9 +78,9 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
           val Some(watchKey) = watchServiceTask.watch(tempDirPath, None, ENTRY_CREATE)
           val fileCreated = Files.createTempFile(tempDirPath, "hello", ".there2")
           fileCreated.toFile.deleteOnExit()
-          val eventList = watchKey.pollEvents()
-          repeatFor(30 seconds, eventList.size >= 1) {
-            eventList.append(watchKey.pollEvents(): _*)
+          val eventList = watchKey.pollEvents().asScala
+          repeatFor(30 seconds, eventList.nonEmpty) {
+            eventList.append(watchKey.pollEvents().asScala: _*)
           }
           watchKey.reset()
           eventList foreach { event =>
@@ -99,9 +99,9 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
         val fileToDelete = Files.createTempFile(tempDirPath, "test", ".file")
         val Some(watchKey) = watchServiceTask.watch(tempDirPath, None, ENTRY_DELETE)
         fileToDelete.toFile.delete()
-        val eventList = watchKey.pollEvents()
-        repeatFor(30 seconds, eventList.size >= 1) {
-          eventList.append(watchKey.pollEvents(): _*)
+        val eventList = watchKey.pollEvents().asScala
+        repeatFor(30 seconds, eventList.nonEmpty) {
+          eventList.append(watchKey.pollEvents().asScala: _*)
         }
         watchKey.reset()
         eventList foreach { _.kind() should be(ENTRY_DELETE) }
@@ -111,9 +111,9 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
         val fileToDelete = Files.createTempFile(tempDirPath, "test", ".file")
         val Some(watchKey) = watchServiceTask.watch(fileToDelete, None, ENTRY_DELETE)
         fileToDelete.toFile.delete()
-        val eventList = watchKey.pollEvents()
-        repeatFor(30 seconds, eventList.size >= 1) {
-          eventList.append(watchKey.pollEvents(): _*)
+        val eventList = watchKey.pollEvents().asScala
+        repeatFor(30 seconds, eventList.nonEmpty) {
+          eventList.append(watchKey.pollEvents().asScala: _*)
         }
         watchKey.reset()
         eventList foreach { _.kind() should be(ENTRY_DELETE) }
@@ -125,9 +125,9 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
           val fileToDelete = Files.createTempFile(tempDirPath, "test", ".file")
           val Some(watchKey) = watchServiceTask.watch(tempDirPath, None, ENTRY_DELETE)
           fileToDelete.toFile.delete()
-          val eventList = watchKey.pollEvents()
-          repeatFor(30 seconds, eventList.size >= 1) {
-            eventList.append(watchKey.pollEvents(): _*)
+          val eventList = watchKey.pollEvents().asScala
+          repeatFor(30 seconds, eventList.nonEmpty) {
+            eventList.append(watchKey.pollEvents().asScala: _*)
           }
           watchKey.reset()
           eventList foreach { event =>
@@ -151,9 +151,9 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
           """
         )
         writer.close()
-        val eventList = watchKey.pollEvents()
-        repeatFor(30 seconds, eventList.size >= 1) {
-          eventList.append(watchKey.pollEvents(): _*)
+        val eventList = watchKey.pollEvents().asScala
+        repeatFor(30 seconds, eventList.nonEmpty) {
+          eventList.append(watchKey.pollEvents().asScala: _*)
         }
         watchKey.reset()
         eventList foreach { _.kind() should be(ENTRY_MODIFY) }
@@ -168,9 +168,9 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
           """
         )
         writer.close()
-        val eventList = watchKey.pollEvents()
-        repeatFor(30 seconds, eventList.size >= 1) {
-          eventList.append(watchKey.pollEvents(): _*)
+        val eventList = watchKey.pollEvents().asScala
+        repeatFor(30 seconds, eventList.nonEmpty) {
+          eventList.append(watchKey.pollEvents().asScala: _*)
         }
         watchKey.reset()
         eventList foreach { _.kind() should be(ENTRY_MODIFY) }
@@ -187,9 +187,9 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
             """
           )
           writer.close()
-          val eventList = watchKey.pollEvents()
-          repeatFor(30 seconds, eventList.size >= 1) {
-            eventList.append(watchKey.pollEvents(): _*)
+          val eventList = watchKey.pollEvents().asScala
+          repeatFor(30 seconds, eventList.nonEmpty) {
+            eventList.append(watchKey.pollEvents().asScala: _*)
           }
           watchKey.reset()
           eventList foreach { event =>
@@ -214,19 +214,19 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
           """
         )
         writer.close()
-        val eventList = watchKey.pollEvents()
+        val eventList = watchKey.pollEvents().asScala
         /*
          .size >= 2 because some systems fire multiple entry modifies on update
           */
         repeatFor(30 seconds, eventList.size >= 2) {
-          eventList.append(watchKey.pollEvents(): _*)
+          eventList.append(watchKey.pollEvents().asScala: _*)
         }
         watchKey.reset()
         eventList foreach { _.kind() should be(ENTRY_MODIFY) }
         tempFileInTempDir2.toFile.delete()
-        val eventList2 = watchKey.pollEvents()
-        repeatFor(30 seconds, eventList2.size >= 1) {
-          eventList2.append(watchKey.pollEvents(): _*)
+        val eventList2 = watchKey.pollEvents().asScala
+        repeatFor(30 seconds, eventList2.nonEmpty) {
+          eventList2.append(watchKey.pollEvents().asScala: _*)
         }
         watchKey.reset()
         /*
