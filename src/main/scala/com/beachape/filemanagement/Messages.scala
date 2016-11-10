@@ -34,7 +34,7 @@ object Messages {
   }
 
   /**
-   * Abstract class to make it easy to define a registration that forwards EvenAtPath messages to a particular [[ActorRef]]
+   * Abstract class to make it easy to define a registration that forwards EvenAtPath messages to a particular ActorRef
    */
   sealed abstract class ForwardToSubscriber(subscriber: ActorRef) { this: RegisterCallbackMessage =>
     val callback: Callback = { path =>

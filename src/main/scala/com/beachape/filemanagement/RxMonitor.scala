@@ -34,7 +34,7 @@ class RxMonitor(actorSystem: ActorSystem) {
   private val monitorActor = actorSystem.actorOf(MonitorActor(concurrency = 1))
 
   /**
-   * Returns an Observable that will spew out [[Path]]s over time based on
+   * Returns an Observable that will spew out Pathss over time based on
    * what paths are registered and unregistered to this RxMonitor
    */
   val observable: Observable[EventAtPath] = toScalaObservable(rxSubject.asObservable())
