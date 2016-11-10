@@ -1,5 +1,5 @@
-Schwatcher [![Build Status](https://travis-ci.org/lloydmeta/schwatcher.svg?branch=master)](https://travis-ci.org/lloydmeta/schwatcher)
-==========
+Schwatcher [![Build Status](https://travis-ci.org/lloydmeta/schwatcher.svg?branch=master)](https://travis-ci.org/lloydmeta/schwatcher) [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.beachape.filemanagement/schwatcher_2.11/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.beachape.filemanagement/schwatcher_2.11)
+======================================================================================================================================
 
 __Note__: Requires Java8+ because the [WatchService API](http://docs.oracle.com/javase/7/docs/api/java/nio/file/WatchService.html)
 is an essential part of this library along with Akka (Akka 2.4.x dropped support for Java7)
@@ -29,7 +29,7 @@ Installation
 Add the following to your `build.sbt`
 
 ```scala
-libraryDependencies += "com.beachape.filemanagement" %% "schwatcher" % "0.3.1"
+libraryDependencies += "com.beachape.filemanagement" %% "schwatcher" % "0.3.2"
 ```
 
 If the above does not work because it cannot be resolved, its likely because it hasn't been synced to Maven central yet.
@@ -38,7 +38,7 @@ In that case, download a SNAPSHOT release of the same version by adding this to 
 ```
 resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 
-libraryDependencies += "com.beachape.filemanagement" %% "schwatcher" % "0.3.1-SNAPSHOT"
+libraryDependencies += "com.beachape.filemanagement" %% "schwatcher" % "0.3.2-SNAPSHOT"
 ```
 
 __Those using Akka 2.1.x__ should stay on 0.0.2 as 0.0.3 onwards uses Akka 2.2.x, which [requires some work to upgrade to](http://doc.akka.io/docs/akka/current/project/migration-guide-2.1.x-2.2.x.html).
