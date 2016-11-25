@@ -190,10 +190,10 @@ Contributors
 IDE Sponsor
 -----------
 
-Jetbrains sponsors this project through their Open Source IntelliJ licence, which has been an immensely helpful tool for
+Jetbrains sponsors this project through their Open Source licence, which has been an immensely helpful tool for
 all of my Scala development, at home and at work.
 
-[![IntelliJ](https://www.jetbrains.com/idea/docs/logo_intellij_idea.png)](https://www.jetbrains.com/idea/)
+[IntelliJ IDEA](https://www.jetbrains.com/idea/)
 
 Licence
 ------
