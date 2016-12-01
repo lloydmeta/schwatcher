@@ -46,7 +46,7 @@ class FileSystemWatchMessageForwarderActorSpec extends FunSpec with Matchers wit
 
   }
 
-  it("should send a changed Dir Message of modified type file when an existing file is modified") {
+  it("should send a ENTRY_MODIFY message when an existing file is modified") {
     new Fixtures {
       val existingFileName = "existingFile.txt"
       val existingFile     = new File(locationDir + File.separator + existingFileName)
@@ -58,7 +58,7 @@ class FileSystemWatchMessageForwarderActorSpec extends FunSpec with Matchers wit
     }
   }
 
-  it("should send a changed Dir Message of created type file when a new file is created") {
+  it("should send a ENTRY_CREATE message when a new file is created") {
     new Fixtures {
       newFile.createNewFile()
       newFile.deleteOnExit()
@@ -69,7 +69,7 @@ class FileSystemWatchMessageForwarderActorSpec extends FunSpec with Matchers wit
     }
   }
 
-  it("should send a changed Dir Message of created type file when a new file is deleted") {
+  it("should send a ENTRY_DELETE message when a new file is deleted") {
     new Fixtures {
       newFile.createNewFile()
       Thread.sleep(10000)
