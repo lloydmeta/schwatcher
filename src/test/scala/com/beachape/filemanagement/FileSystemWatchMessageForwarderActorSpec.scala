@@ -55,7 +55,7 @@ class FileSystemWatchMessageForwarderActorSpec
       }
     }
 
-    "send a changed Dir Message of created type file when a new file is deleted" in {
+    "send a changed Dir Message of created type file when a new file is created" in {
       val newFileName = "newFile.txt"
       val newFile     = new File(locationDir + File.separator + newFileName)
       newFile.createNewFile()
