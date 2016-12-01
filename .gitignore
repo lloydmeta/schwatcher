@@ -39,3 +39,5 @@
 *.class
 *.log
 .DS_Store
+
+src/test/permdata/newFile*

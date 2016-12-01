@@ -24,7 +24,7 @@ object MonitorActor {
     * @param dedupeTime Duration, how long to wait between modify event dedupe cycles.
     * @return Props for instantiating a MonitorActor
     */
-  def apply(concurrency: Int = 5, dedupeTime: FiniteDuration = 1.5.seconds) = {
+  def apply(concurrency: Int = 5, dedupeTime: FiniteDuration = 1.5.seconds): Props = {
     require(concurrency >= 1,
             s"Callback concurrency requested is $concurrency but it should at least be 1")
     Props(classOf[MonitorActor], concurrency, dedupeTime)
@@ -79,17 +79,17 @@ class MonitorActor(concurrency: Int = 5, dedupeTime: FiniteDuration = 1.5.second
     )
   }
 
-  override def preStart() = {
+  override def preStart(): Unit = {
     watchThread.setDaemon(true)
     watchThread.start()
   }
 
-  override def postStop() = {
+  override def postStop(): Unit = {
     watchThread.interrupt()
     flushTrackerCycle.cancel()
   }
 
-  def receive =
+  def receive: Receive =
     withState(initialEventTypeCallbackRegistryMap,
               initialEventTypeCallbackRegistryMap,
               EventTracker())
@@ -309,8 +309,7 @@ class MonitorActor(concurrency: Int = 5, dedupeTime: FiniteDuration = 1.5.second
         _.withCallbackFor(
           path = absolutePath,
           callback = persistentCallback,
-          recursive = registerMessage.recursive,
-          bossy = true
+          recursive = registerMessage.recursive
         )
       )
       val persistentUnregisterCallback = persistentUnRegister(registerMessage)

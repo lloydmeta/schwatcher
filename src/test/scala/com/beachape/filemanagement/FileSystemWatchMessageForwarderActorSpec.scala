@@ -10,73 +10,74 @@ import com.beachape.filemanagement.Messages.EventAtPath
 import com.sun.nio.file.SensitivityWatchEventModifier
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
-import org.scalatest.time.{Millis, Seconds, Span}
+import org.scalatest.time.{Nanoseconds, Seconds, Span}
 
 /**
   * Created by arunavs on 9/27/16.
   *
   * Test cases for FileSystemWatchMessageForwardingActor.
   */
-class FileSystemWatchMessageForwarderActorSpec
-    extends TestKit(ActorSystem("FSWatchTest"))
-    with ImplicitSender
-    with FunSpecLike
-    with Matchers
-    with BeforeAndAfterAll
-    with Eventually {
+class FileSystemWatchMessageForwarderActorSpec extends FunSpec with Matchers with Eventually {
 
   implicit override val patienceConfig =
-    PatienceConfig(timeout = scaled(Span(100, Seconds)), interval = scaled(Span(5, Millis)))
+    PatienceConfig(timeout = scaled(Span(100, Seconds)), interval = scaled(Span(5, Nanoseconds)))
 
-  private val locationDir           = "./src/test/permdata"
-  private val locationDirFileHandle = new File(locationDir)
-  locationDirFileHandle.deleteOnExit()
-  private val allLocs = List(Paths.get("./src/test/permdata"))
+  // Use Fixtures just to avoid dealing with expectMsg dying on lagging messages across tests
+  sealed abstract class Fixtures extends TestKit(ActorSystem("testSystem")) with ImplicitSender {
 
-  /**
-    * Note the passing of the `self` reference, where self
-    * is the actor for the test suite itself so we can use expect msg
-    */
-  val customActorRef = TestActorRef(
-    new FileSystemWatchMessageForwardingActor(allLocs,
-                                              self,
-                                              modifier = Some(SensitivityWatchEventModifier.HIGH)))
+    protected val locationDir = "./src/test/permdata"
+    val newFileName           = "newFile.txt"
+    val newFile               = new File(locationDir + File.separator + newFileName)
+    newFile.delete()
 
-  override def afterAll: Unit = {
-    TestKit.shutdownActorSystem(system)
+    private val locationDirFileHandle = new File(locationDir)
+    locationDirFileHandle.deleteOnExit()
+    private val allLocs = List(Paths.get("./src/test/permdata"))
+
+    /**
+      * Note the passing of the `self` reference, where self
+      * is the actor for the test suite itself so we can use expect msg
+      */
+    val customActorRef = TestActorRef(
+      new FileSystemWatchMessageForwardingActor(
+        allLocs,
+        self,
+        modifier = Some(SensitivityWatchEventModifier.HIGH)))
+
   }
 
   it("should send a changed Dir Message of modified type file when an existing file is modified") {
-    val existingFileName = "existingFile.txt"
-    val existingFile     = new File(locationDir + File.separator + existingFileName)
-    printTestToFile(existingFile)
-    eventually {
-      val filePath = existingFile.getAbsoluteFile.toPath
-      expectMsg(EventAtPath(ENTRY_MODIFY, filePath))
+    new Fixtures {
+      val existingFileName = "existingFile.txt"
+      val existingFile     = new File(locationDir + File.separator + existingFileName)
+      printTestToFile(existingFile)
+      eventually {
+        val filePath = existingFile.getAbsoluteFile.toPath
+        expectMsg(EventAtPath(ENTRY_MODIFY, filePath))
+      }
     }
   }
 
   it("should send a changed Dir Message of created type file when a new file is created") {
-    val newFileName = "newFile.txt"
-    val newFile     = new File(locationDir + File.separator + newFileName)
-    newFile.createNewFile()
-    newFile.deleteOnExit()
-    eventually {
-      val filePath = newFile.getAbsoluteFile.toPath
-      expectMsg(EventAtPath(ENTRY_CREATE, filePath))
+    new Fixtures {
+      newFile.createNewFile()
+      newFile.deleteOnExit()
+      eventually {
+        val filePath = newFile.getAbsoluteFile.toPath
+        expectMsg(EventAtPath(ENTRY_CREATE, filePath))
+      }
     }
   }
 
-  // TODO figure out why this fails. (Perhaps we need to isolate them in fixtures in order for expectMsg to work)
   it("should send a changed Dir Message of created type file when a new file is deleted") {
-    val newFileName = "newFile2"
-    val newFile     = new File(locationDir + File.separator + newFileName)
-    newFile.createNewFile()
-    Thread.sleep(10000)
-    newFile.delete()
-    eventually {
-      val filePath = newFile.getAbsoluteFile.toPath
-      expectMsg(EventAtPath(ENTRY_DELETE, filePath))
+    new Fixtures {
+      newFile.createNewFile()
+      Thread.sleep(10000)
+      newFile.delete()
+      eventually {
+        val filePath = newFile.getAbsoluteFile.toPath
+        expectMsg(EventAtPath(ENTRY_DELETE, filePath))
+      }
     }
   }
 
