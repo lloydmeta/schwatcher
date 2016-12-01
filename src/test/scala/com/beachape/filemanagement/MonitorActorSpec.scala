@@ -1,24 +1,20 @@
 package com.beachape.filemanagement
 
 import akka.actor.ActorSystem
-import akka.testkit.{ ImplicitSender, TestActorRef, TestKit }
+import akka.testkit.{ImplicitSender, TestActorRef, TestKit}
 import com.beachape.filemanagement.Messages._
 import com.beachape.filemanagement.RegistryTypes.Callback
 import java.nio.file.StandardWatchEventKinds._
-import java.nio.file.{ Files, Path, WatchEvent }
+import java.nio.file.{Files, Path, WatchEvent}
 import java.nio.file.WatchEvent.Modifier
 import org.scalatest._
-import java.io.{ File, FileWriter, BufferedWriter }
+import java.io.{File, FileWriter, BufferedWriter}
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 import scala.language.postfixOps
 import com.beachape.filemanagement.MonitorActor.CallbackRegistryMap
 
-class MonitorActorSpec
-    extends FunSpec
-    with Matchers
-    with BeforeAndAfter
-    with PrivateMethodTester {
+class MonitorActorSpec extends FunSpec with Matchers with BeforeAndAfter with PrivateMethodTester {
 
   private val waitTime = 15 seconds
 
@@ -27,11 +23,11 @@ class MonitorActorSpec
 
     // Actor
     val monitorActorRef = TestActorRef(new MonitorActor(concurrency = 1))
-    val monitorActor = monitorActorRef.underlyingActor
+    val monitorActor    = monitorActorRef.underlyingActor
 
     // Files
-    val tempFile = java.io.File.createTempFile("fakeFile", ".log")
-    val tempDirPath = Files.createTempDirectory("root")
+    val tempFile          = java.io.File.createTempFile("fakeFile", ".log")
+    val tempDirPath       = Files.createTempDirectory("root")
     val tempDirLevel1Path = Files.createTempDirectory(tempDirPath, "level1")
     val tempDirLevel2Path = Files.createTempDirectory(tempDirLevel1Path, "level2")
     val tempFileInTempDir = Files.createTempFile(tempDirPath, "hello", ".there")
@@ -43,57 +39,58 @@ class MonitorActorSpec
     tempDirLevel2Path.toFile.deleteOnExit()
     tempFileInTempDir.toFile.deleteOnExit()
 
-    val dummyFunction: Path => Unit = {
-      (path: Path) => val bleh = "lala"
+    val dummyFunction: Path => Unit = { (path: Path) =>
+      val bleh = "lala"
     }
     val newRegistryMap = PrivateMethod[CallbackRegistryMap]('newCallbackRegistryMap)
 
     val HIGH = get_com_sun_nio_file_SensitivityWatchEventModifier("HIGH")
-    val LOW = get_com_sun_nio_file_SensitivityWatchEventModifier("LOW")
+    val LOW  = get_com_sun_nio_file_SensitivityWatchEventModifier("LOW")
 
     val me: Fixtures = this
 
     // Test helper methods
-    def addCallbackFor(
-      originalMap: CallbackRegistryMap,
-      path: Path,
-      event: WatchEvent.Kind[Path],
-      callback: Callback,
-      recursive: Boolean = false): CallbackRegistryMap = {
+    def addCallbackFor(originalMap: CallbackRegistryMap,
+                       path: Path,
+                       event: WatchEvent.Kind[Path],
+                       callback: Callback,
+                       recursive: Boolean = false): CallbackRegistryMap = {
       val absolutePath = path.toAbsolutePath
       monitorActor invokePrivate newRegistryMap(
         originalMap,
-        event, {
-          registry: CallbackRegistry => registry.withCallbackFor(absolutePath, callback, recursive)
+        event, { registry: CallbackRegistry =>
+          registry.withCallbackFor(absolutePath, callback, recursive)
         }
       )
     }
 
-    def removeCallbacksFor(
-      originalMap: CallbackRegistryMap,
-      path: Path,
-      event: WatchEvent.Kind[Path],
-      recursive: Boolean = false): CallbackRegistryMap = {
+    def removeCallbacksFor(originalMap: CallbackRegistryMap,
+                           path: Path,
+                           event: WatchEvent.Kind[Path],
+                           recursive: Boolean = false): CallbackRegistryMap = {
       val absolutePath = path.toAbsolutePath
       monitorActor invokePrivate newRegistryMap(
         originalMap,
-        event, {
-          registry: CallbackRegistry => registry.withoutCallbacksFor(absolutePath, recursive)
+        event, { registry: CallbackRegistry =>
+          registry.withoutCallbacksFor(absolutePath, recursive)
         }
       )
     }
 
     // Recursive version of the same as above
     def addCallbackFor(
-      originalMap: CallbackRegistryMap,
-      pathsCallbackRecursive: List[(Path, WatchEvent.Kind[Path], Callback, Boolean)]): CallbackRegistryMap = {
+        originalMap: CallbackRegistryMap,
+        pathsCallbackRecursive: List[(Path, WatchEvent.Kind[Path], Callback, Boolean)])
+      : CallbackRegistryMap = {
       pathsCallbackRecursive.foldLeft(originalMap) {
-        case (memo, (path, eventType, callback, recursive)) => addCallbackFor(memo, path, eventType, callback, recursive)
+        case (memo, (path, eventType, callback, recursive)) =>
+          addCallbackFor(memo, path, eventType, callback, recursive)
       }
     }
 
     // Load `com.sun.nio.file.SensitivityWatchEventModifie._` if possible
-    private def get_com_sun_nio_file_SensitivityWatchEventModifier(field: String): Option[Modifier] = {
+    private def get_com_sun_nio_file_SensitivityWatchEventModifier(
+        field: String): Option[Modifier] = {
       try {
         val c = Class.forName("com.sun.nio.file.SensitivityWatchEventModifier")
         val f = c.getField(field)
@@ -108,8 +105,8 @@ class MonitorActorSpec
   }
 
   trait MessagingFixtures extends Fixtures {
-    val callbackFunc = {
-      (path: Path) => testActor ! path
+    val callbackFunc = { (path: Path) =>
+      testActor ! path
     }
   }
 
@@ -120,7 +117,8 @@ class MonitorActorSpec
         val thrown = intercept[IllegalArgumentException] {
           TestActorRef(MonitorActor(0))
         }
-        thrown.getMessage should be("requirement failed: Callback concurrency requested is 0 but it should at least be 1")
+        thrown.getMessage should be(
+          "requirement failed: Callback concurrency requested is 0 but it should at least be 1")
       }
     }
 
@@ -146,18 +144,18 @@ class MonitorActorSpec
         new Fixtures {
           val map = addCallbackFor(emptyCbMap, tempFile.toPath, ENTRY_CREATE, dummyFunction)
           monitorActor.callbacksFor(map, ENTRY_CREATE, tempFile.toPath).isEmpty should be(false)
-          monitorActor.callbacksFor(map, ENTRY_CREATE, tempFile.toPath) foreach {
-            callbacks =>
-              callbacks should contain(dummyFunction)
+          monitorActor.callbacksFor(map, ENTRY_CREATE, tempFile.toPath) foreach { callbacks =>
+            callbacks should contain(dummyFunction)
           }
         }
       }
 
       it("should allow callbacks to be removed from the registry") {
         new Fixtures {
-          val addedMap = addCallbackFor(emptyCbMap, tempFile.toPath, ENTRY_CREATE, dummyFunction)
+          val addedMap   = addCallbackFor(emptyCbMap, tempFile.toPath, ENTRY_CREATE, dummyFunction)
           val removedMap = removeCallbacksFor(addedMap, tempFile.toPath, ENTRY_CREATE)
-          monitorActor.callbacksFor(removedMap, ENTRY_CREATE, tempFile.toPath).isEmpty should be(true)
+          monitorActor.callbacksFor(removedMap, ENTRY_CREATE, tempFile.toPath).isEmpty should be(
+            true)
         }
       }
     }
@@ -167,28 +165,35 @@ class MonitorActorSpec
       it("should add callbacks for all folders that exist under the path given") {
         new Fixtures {
           val addedMap = addCallbackFor(emptyCbMap, tempDirPath, ENTRY_CREATE, dummyFunction, true)
-          monitorActor.callbacksFor(addedMap, ENTRY_CREATE, tempDirLevel1Path).foreach(callbacks =>
-            callbacks should contain(dummyFunction))
-          monitorActor.callbacksFor(addedMap, ENTRY_CREATE, tempDirLevel2Path).foreach(callbacks =>
-            callbacks should contain(dummyFunction))
+          monitorActor
+            .callbacksFor(addedMap, ENTRY_CREATE, tempDirLevel1Path)
+            .foreach(callbacks => callbacks should contain(dummyFunction))
+          monitorActor
+            .callbacksFor(addedMap, ENTRY_CREATE, tempDirLevel2Path)
+            .foreach(callbacks => callbacks should contain(dummyFunction))
         }
       }
 
       it("should add callbacks for a file path") {
         new Fixtures {
-          val addedMap = addCallbackFor(emptyCbMap, tempFileInTempDir, ENTRY_CREATE, dummyFunction, true)
-          monitorActor.callbacksFor(addedMap, ENTRY_CREATE, tempFileInTempDir).foreach(callbacks =>
-            callbacks should contain(dummyFunction))
+          val addedMap =
+            addCallbackFor(emptyCbMap, tempFileInTempDir, ENTRY_CREATE, dummyFunction, true)
+          monitorActor
+            .callbacksFor(addedMap, ENTRY_CREATE, tempFileInTempDir)
+            .foreach(callbacks => callbacks should contain(dummyFunction))
         }
       }
 
       it("should not add callbacks recursively if given a file path") {
         new Fixtures {
-          val addedMap = addCallbackFor(emptyCbMap, tempFileInTempDir, ENTRY_CREATE, dummyFunction, true)
-          monitorActor.callbacksFor(addedMap, ENTRY_CREATE, tempDirLevel1Path).foreach(callbacks =>
-            callbacks should not contain dummyFunction)
-          monitorActor.callbacksFor(addedMap, ENTRY_CREATE, tempDirLevel2Path).foreach(callbacks =>
-            callbacks should not contain dummyFunction)
+          val addedMap =
+            addCallbackFor(emptyCbMap, tempFileInTempDir, ENTRY_CREATE, dummyFunction, true)
+          monitorActor
+            .callbacksFor(addedMap, ENTRY_CREATE, tempDirLevel1Path)
+            .foreach(callbacks => callbacks should not contain dummyFunction)
+          monitorActor
+            .callbacksFor(addedMap, ENTRY_CREATE, tempDirLevel2Path)
+            .foreach(callbacks => callbacks should not contain dummyFunction)
         }
       }
 
@@ -198,18 +203,25 @@ class MonitorActorSpec
 
       it("should remove callbacks for all folders that exist under the path given") {
         new Fixtures {
-          val addedMap = addCallbackFor(emptyCbMap, tempDirPath, ENTRY_CREATE, dummyFunction, true)
+          val addedMap   = addCallbackFor(emptyCbMap, tempDirPath, ENTRY_CREATE, dummyFunction, true)
           val removedMap = removeCallbacksFor(addedMap, tempDirPath, ENTRY_CREATE, true)
-          monitorActor.callbacksFor(removedMap, ENTRY_CREATE, tempDirLevel1Path).isEmpty shouldBe true
-          monitorActor.callbacksFor(removedMap, ENTRY_CREATE, tempDirLevel2Path).isEmpty shouldBe true
+          monitorActor
+            .callbacksFor(removedMap, ENTRY_CREATE, tempDirLevel1Path)
+            .isEmpty shouldBe true
+          monitorActor
+            .callbacksFor(removedMap, ENTRY_CREATE, tempDirLevel2Path)
+            .isEmpty shouldBe true
         }
       }
 
       it("should remove callbacks for a file path") {
         new Fixtures {
-          val addedMap = addCallbackFor(emptyCbMap, tempFileInTempDir, ENTRY_CREATE, dummyFunction, true)
+          val addedMap =
+            addCallbackFor(emptyCbMap, tempFileInTempDir, ENTRY_CREATE, dummyFunction, true)
           val removedMap = removeCallbacksFor(addedMap, tempFileInTempDir, ENTRY_CREATE, true)
-          monitorActor.callbacksFor(removedMap, ENTRY_CREATE, tempFileInTempDir).isEmpty shouldBe true
+          monitorActor
+            .callbacksFor(removedMap, ENTRY_CREATE, tempFileInTempDir)
+            .isEmpty shouldBe true
         }
       }
 
@@ -220,18 +232,20 @@ class MonitorActorSpec
       it("should return Some[Callbacks] that contains prior registered callbacks for a path") {
         new Fixtures {
           val cbMap = addCallbackFor(emptyCbMap, tempFile.toPath, ENTRY_CREATE, dummyFunction)
-          monitorActor.callbacksFor(cbMap, ENTRY_CREATE, tempFile.toPath) foreach {
-            callbacks =>
-              callbacks should contain(dummyFunction)
+          monitorActor.callbacksFor(cbMap, ENTRY_CREATE, tempFile.toPath) foreach { callbacks =>
+            callbacks should contain(dummyFunction)
           }
         }
       }
 
-      it("should return Some[Callbacks] that does not contain callbacks for paths never registered") {
+      it(
+        "should return Some[Callbacks] that does not contain callbacks for paths never registered") {
         new Fixtures {
           val tempFile2 = java.io.File.createTempFile("fakeFile2", ".log")
           tempFile2.deleteOnExit()
-          monitorActor.callbacksFor(emptyCbMap, ENTRY_CREATE, tempFile2.toPath).isEmpty shouldBe true
+          monitorActor
+            .callbacksFor(emptyCbMap, ENTRY_CREATE, tempFile2.toPath)
+            .isEmpty shouldBe true
         }
       }
 
@@ -241,28 +255,30 @@ class MonitorActorSpec
 
       it("should get the proper callback for a file path") {
         new MessagingFixtures {
-          val cbMap = addCallbackFor(emptyCbMap, List(
-            (tempDirPath, ENTRY_CREATE, callbackFunc, false),
-            (tempDirLevel2Path, ENTRY_CREATE, callbackFunc, false),
-            (tempFileInTempDir, ENTRY_CREATE, callbackFunc, false)
-          ))
+          val cbMap = addCallbackFor(emptyCbMap,
+                                     List(
+                                       (tempDirPath, ENTRY_CREATE, callbackFunc, false),
+                                       (tempDirLevel2Path, ENTRY_CREATE, callbackFunc, false),
+                                       (tempFileInTempDir, ENTRY_CREATE, callbackFunc, false)
+                                     ))
           monitorActor.processCallbacksFor(cbMap, emptyCbMap, ENTRY_CREATE, tempFileInTempDir)
           /*
             Fired twice because tempDirPath and tempFileInTempDir are both registered.
             The file path passed to the callback is still the same though because it
             is still the file
-          */
+           */
           expectMsgAllOf(tempFileInTempDir, tempFileInTempDir)
         }
       }
 
       it("should get the proper callback for a directory") {
         new MessagingFixtures {
-          val cbMap = addCallbackFor(emptyCbMap, List(
-            (tempDirPath, ENTRY_MODIFY, callbackFunc, false),
-            (tempDirLevel2Path, ENTRY_MODIFY, callbackFunc, false),
-            (tempFileInTempDir, ENTRY_MODIFY, callbackFunc, false)
-          ))
+          val cbMap = addCallbackFor(emptyCbMap,
+                                     List(
+                                       (tempDirPath, ENTRY_MODIFY, callbackFunc, false),
+                                       (tempDirLevel2Path, ENTRY_MODIFY, callbackFunc, false),
+                                       (tempFileInTempDir, ENTRY_MODIFY, callbackFunc, false)
+                                     ))
           monitorActor.processCallbacksFor(cbMap, emptyCbMap, ENTRY_MODIFY, tempDirPath)
           expectMsg(tempDirPath)
         }
@@ -325,7 +341,11 @@ class MonitorActorSpec
               tempDirLevel1Path is a parent of tempDirLevel2Path
               Fired 2 times for tempDirLevel2Path because tempDireLevel1Path and tempDirLevel2Path are both registered
              */
-            expectMsgAllOf(tempDirLevel1Path, tempDirLevel1Path, tempDirLevel1Path, tempDirLevel2Path, tempDirLevel2Path)
+            expectMsgAllOf(tempDirLevel1Path,
+                           tempDirLevel1Path,
+                           tempDirLevel1Path,
+                           tempDirLevel2Path,
+                           tempDirLevel2Path)
           }
         }
 
@@ -415,7 +435,8 @@ class MonitorActorSpec
 
     describe("file created in a nested directory") {
 
-      def testRegistration[A](register: Fixtures => RegisterCallbackMessage, expectedMsg: Path => A): Unit = {
+      def testRegistration[A](register: Fixtures => RegisterCallbackMessage,
+                              expectedMsg: Path => A): Unit = {
         new Fixtures {
           monitorActorRef ! register(me)
           // Sleep to make sure that the Java WatchService is monitoring the file ...
@@ -431,10 +452,11 @@ class MonitorActorSpec
 
       it("should fire the appropriate callback") {
         testRegistration(
-          fixture => RegisterCallback(
-            event = ENTRY_CREATE,
-            path = fixture.tempDirPath,
-            callback = path => fixture.testActor ! s"New thing at $path"
+          fixture =>
+            RegisterCallback(
+              event = ENTRY_CREATE,
+              path = fixture.tempDirPath,
+              callback = path => fixture.testActor ! s"New thing at $path"
           ),
           path => s"New thing at $path"
         )
@@ -442,10 +464,11 @@ class MonitorActorSpec
 
       it("should forward the message to the appropriate actor") {
         testRegistration(
-          fixture => RegisterSubscriber(
-            event = ENTRY_CREATE,
-            path = fixture.tempDirPath,
-            subscriber = fixture.testActor
+          fixture =>
+            RegisterSubscriber(
+              event = ENTRY_CREATE,
+              path = fixture.tempDirPath,
+              subscriber = fixture.testActor
           ),
           path => EventAtPath(ENTRY_CREATE, path)
         )
@@ -455,7 +478,8 @@ class MonitorActorSpec
 
     describe("file modified") {
 
-      def testRegistration[A](register: Fixtures => RegisterCallbackMessage, expectedMsg: Path => A): Unit = {
+      def testRegistration[A](register: Fixtures => RegisterCallbackMessage,
+                              expectedMsg: Path => A): Unit = {
         new Fixtures {
           monitorActorRef ! register(me)
           // Sleep to make sure that the Java WatchService is monitoring the file ...
@@ -472,10 +496,11 @@ class MonitorActorSpec
 
       it("should fire the appropriate callback") {
         testRegistration(
-          fixture => RegisterCallback(
-            event = ENTRY_MODIFY,
-            path = fixture.tempFile.toPath,
-            callback = path => fixture.testActor ! s"Modified file is at $path"
+          fixture =>
+            RegisterCallback(
+              event = ENTRY_MODIFY,
+              path = fixture.tempFile.toPath,
+              callback = path => fixture.testActor ! s"Modified file is at $path"
           ),
           path => s"Modified file is at $path"
         )
@@ -483,10 +508,11 @@ class MonitorActorSpec
 
       it("should forward the message to the appropriate actor") {
         testRegistration(
-          fixture => RegisterSubscriber(
-            event = ENTRY_MODIFY,
-            path = fixture.tempFile.toPath,
-            subscriber = fixture.testActor
+          fixture =>
+            RegisterSubscriber(
+              event = ENTRY_MODIFY,
+              path = fixture.tempFile.toPath,
+              subscriber = fixture.testActor
           ),
           path => EventAtPath(ENTRY_MODIFY, path)
         )
@@ -500,7 +526,8 @@ class MonitorActorSpec
 
     describe("for modify events on newly created files") {
 
-      def testRegistration[A](register: Fixtures => RegisterCallbackMessage, expectedMsg: Path => A): Unit = {
+      def testRegistration[A](register: Fixtures => RegisterCallbackMessage,
+                              expectedMsg: Path => A): Unit = {
         new Fixtures {
           monitorActorRef ! register(me)
           // Sleep to make sure that the Java WatchService is monitoring the file ...
@@ -541,7 +568,7 @@ class MonitorActorSpec
               path = fixture.tempDirPath,
               subscriber = fixture.testActor,
               persistent = true
-            ),
+          ),
           path => EventAtPath(ENTRY_MODIFY, path)
         )
       }
@@ -550,7 +577,8 @@ class MonitorActorSpec
 
     describe("deletion on newly created files") {
 
-      def testRegistration[A](register: Fixtures => RegisterCallbackMessage, expectedMsg: Path => A): Unit = {
+      def testRegistration[A](register: Fixtures => RegisterCallbackMessage,
+                              expectedMsg: Path => A): Unit = {
         new Fixtures {
           monitorActorRef ! register(me)
           // Sleep to make sure that the Java WatchService is monitoring the file ...
@@ -572,11 +600,12 @@ class MonitorActorSpec
 
       it("should fire the proper callback") {
         testRegistration(
-          fixture => RegisterCallback(
-            event = ENTRY_DELETE,
-            path = fixture.tempDirPath,
-            callback = path => fixture.testActor ! s"Deleted file is at $path",
-            persistent = true
+          fixture =>
+            RegisterCallback(
+              event = ENTRY_DELETE,
+              path = fixture.tempDirPath,
+              callback = path => fixture.testActor ! s"Deleted file is at $path",
+              persistent = true
           ),
           path => s"Deleted file is at $path"
         )
@@ -584,11 +613,12 @@ class MonitorActorSpec
 
       it("should forward the message to the appropriate actor") {
         testRegistration(
-          fixture => RegisterSubscriber(
-            event = ENTRY_DELETE,
-            path = fixture.tempDirPath,
-            subscriber = fixture.testActor,
-            persistent = true
+          fixture =>
+            RegisterSubscriber(
+              event = ENTRY_DELETE,
+              path = fixture.tempDirPath,
+              subscriber = fixture.testActor,
+              persistent = true
           ),
           path => EventAtPath(ENTRY_DELETE, path)
         )
@@ -598,7 +628,8 @@ class MonitorActorSpec
 
     describe("creation within newly created directories") {
 
-      def testRegistration[A](register: Fixtures => RegisterCallbackMessage, expectedMsg: Path => A): Unit = {
+      def testRegistration[A](register: Fixtures => RegisterCallbackMessage,
+                              expectedMsg: Path => A): Unit = {
         new Fixtures {
           monitorActorRef ! register(me)
           // Sleep to make sure that the Java WatchService is monitoring the file ...
@@ -620,11 +651,12 @@ class MonitorActorSpec
 
       it("should fire the proper callback") {
         testRegistration(
-          fixture => RegisterCallback(
-            event = ENTRY_CREATE,
-            path = fixture.tempDirPath,
-            callback = path => fixture.testActor ! s"Created file is at $path",
-            persistent = true
+          fixture =>
+            RegisterCallback(
+              event = ENTRY_CREATE,
+              path = fixture.tempDirPath,
+              callback = path => fixture.testActor ! s"Created file is at $path",
+              persistent = true
           ),
           path => s"Created file is at $path"
         )
@@ -632,11 +664,12 @@ class MonitorActorSpec
 
       it("should forward the message to the appropriate actor") {
         testRegistration(
-          fixture => RegisterSubscriber(
-            event = ENTRY_CREATE,
-            path = fixture.tempDirPath,
-            subscriber = fixture.testActor,
-            persistent = true
+          fixture =>
+            RegisterSubscriber(
+              event = ENTRY_CREATE,
+              path = fixture.tempDirPath,
+              subscriber = fixture.testActor,
+              persistent = true
           ),
           path => EventAtPath(ENTRY_CREATE, path)
         )
@@ -649,8 +682,8 @@ class MonitorActorSpec
   describe("Register with specified modifier") {
     it("should use specified modifier for polling event") {
       new Fixtures {
-        var start: Long = _
-        var timeLOW: Long = _
+        var start: Long    = _
+        var timeLOW: Long  = _
         var timeHIGH: Long = _
         // Execute only when `HIGH` is available
         HIGH match {

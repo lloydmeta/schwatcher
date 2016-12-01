@@ -11,10 +11,10 @@ crossVersion := CrossVersion.binary
 resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
 
 libraryDependencies ++= Seq(
-  "org.scalatest" %% "scalatest" % "3.0.0" % "test",
+  "org.scalatest"     %% "scalatest"    % "3.0.0" % "test",
   "com.typesafe.akka" %% "akka-testkit" % "2.4.12" % "test",
-  "com.typesafe.akka" %% "akka-actor" % "2.4.12",
-  "io.reactivex" %% "rxscala" % "0.26.4"
+  "com.typesafe.akka" %% "akka-actor"   % "2.4.12",
+  "io.reactivex"      %% "rxscala"      % "0.26.4"
 )
 
 publishTo := {
@@ -31,9 +31,9 @@ publishMavenStyle := true
 
 publishArtifact in Test := false
 
-pomIncludeRepository := { _ => false }
-
-scalariformSettings
+pomIncludeRepository := { _ =>
+  false
+}
 
 pomExtra := (
   <url>https://github.com/lloydmeta/schwatcher</url>
@@ -59,7 +59,8 @@ pomExtra := (
 
 scalacOptions ++= Seq(
   "-deprecation",
-  "-encoding", "UTF-8",       // yes, this is 2 args
+  "-encoding",
+  "UTF-8", // yes, this is 2 args
   "-feature",
   "-language:existentials",
   "-language:higherKinds",
@@ -68,8 +69,12 @@ scalacOptions ++= Seq(
   "-Xfatal-warnings",
   "-Xlint",
   "-Yno-adapted-args",
-  "-Ywarn-dead-code",        // N.B. doesn't work well with the ??? hole
+  "-Ywarn-dead-code", // N.B. doesn't work well with the ??? hole
   "-Ywarn-numeric-widen",
   "-Xfuture",
-  "-Ywarn-unused-import"     // 2.11 only
+  "-Ywarn-unused-import" // 2.11 only
 )
+
+scalafmtConfig := Some(file(".scalafmt.conf"))
+
+reformatOnCompileSettings

@@ -1,11 +1,11 @@
 package com.beachape.filemanagement
 
-import akka.actor.{ ActorSystem, Actor }
-import akka.testkit.{ TestActorRef, TestKit }
+import akka.actor.{ActorSystem, Actor}
+import akka.testkit.{TestActorRef, TestKit}
 import scala.collection.JavaConverters._
-import java.io.{ FileWriter, BufferedWriter }
+import java.io.{FileWriter, BufferedWriter}
 import java.nio.file.StandardWatchEventKinds._
-import java.nio.file.{ Path, Files }
+import java.nio.file.{Path, Files}
 import org.scalatest._
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -16,15 +16,16 @@ class DummyActor extends Actor {
   }
 }
 
-class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
+class WatchServiceTaskSpec
+    extends TestKit(ActorSystem("testSystem"))
     with FunSpecLike
     with Matchers
     with BeforeAndAfter {
 
-  val dummyActor = TestActorRef[DummyActor]
+  val dummyActor       = TestActorRef[DummyActor]
   var watchServiceTask = WatchServiceTask(dummyActor)
 
-  val tempDirPath = Files.createTempDirectory("root")
+  val tempDirPath       = Files.createTempDirectory("root")
   val tempFileInTempDir = Files.createTempFile(tempDirPath.toAbsolutePath, "hello", ".there")
   tempDirPath.toFile.deleteOnExit()
   tempFileInTempDir.toFile.deleteOnExit()
@@ -76,7 +77,7 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
 
         it("should have the correct path in the event") {
           val Some(watchKey) = watchServiceTask.watch(tempDirPath, None, ENTRY_CREATE)
-          val fileCreated = Files.createTempFile(tempDirPath, "hello", ".there2")
+          val fileCreated    = Files.createTempFile(tempDirPath, "hello", ".there2")
           fileCreated.toFile.deleteOnExit()
           val eventList = watchKey.pollEvents().asScala
           repeatFor(30 seconds, eventList.nonEmpty) {
@@ -84,7 +85,8 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
           }
           watchKey.reset()
           eventList foreach { event =>
-            watchServiceTask.contextAbsolutePath(watchKey, event.context().asInstanceOf[Path]) should
+            watchServiceTask
+              .contextAbsolutePath(watchKey, event.context().asInstanceOf[Path]) should
               be(fileCreated.toAbsolutePath)
           }
         }
@@ -96,7 +98,7 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
     describe("for ENTRY_DELETE") {
 
       it("should cause ENTRY_DELETE events to be detectable for a directory path") {
-        val fileToDelete = Files.createTempFile(tempDirPath, "test", ".file")
+        val fileToDelete   = Files.createTempFile(tempDirPath, "test", ".file")
         val Some(watchKey) = watchServiceTask.watch(tempDirPath, None, ENTRY_DELETE)
         fileToDelete.toFile.delete()
         val eventList = watchKey.pollEvents().asScala
@@ -108,7 +110,7 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
       }
 
       it("should cause ENTRY_DELETE events to be detectable for a file path") {
-        val fileToDelete = Files.createTempFile(tempDirPath, "test", ".file")
+        val fileToDelete   = Files.createTempFile(tempDirPath, "test", ".file")
         val Some(watchKey) = watchServiceTask.watch(fileToDelete, None, ENTRY_DELETE)
         fileToDelete.toFile.delete()
         val eventList = watchKey.pollEvents().asScala
@@ -122,7 +124,7 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
       describe("implicit testing of #contextAbsolutePath") {
 
         it("should have the correct path in the event") {
-          val fileToDelete = Files.createTempFile(tempDirPath, "test", ".file")
+          val fileToDelete   = Files.createTempFile(tempDirPath, "test", ".file")
           val Some(watchKey) = watchServiceTask.watch(tempDirPath, None, ENTRY_DELETE)
           fileToDelete.toFile.delete()
           val eventList = watchKey.pollEvents().asScala
@@ -131,7 +133,8 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
           }
           watchKey.reset()
           eventList foreach { event =>
-            watchServiceTask.contextAbsolutePath(watchKey, event.context().asInstanceOf[Path]) should
+            watchServiceTask
+              .contextAbsolutePath(watchKey, event.context().asInstanceOf[Path]) should
               be(fileToDelete.toAbsolutePath)
           }
         }
@@ -144,7 +147,7 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
 
       it("should cause ENTRY_MODIFY events to be detectable for a directory path") {
         val Some(watchKey) = watchServiceTask.watch(tempDirPath, None, ENTRY_MODIFY)
-        val writer = new BufferedWriter(new FileWriter(tempFileInTempDir.toFile))
+        val writer         = new BufferedWriter(new FileWriter(tempFileInTempDir.toFile))
         writer.write(
           """
             |Theres text in here !!
@@ -161,7 +164,7 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
 
       it("should cause ENTRY_MODIFY events to be detectable for a file path") {
         val Some(watchKey) = watchServiceTask.watch(tempFileInTempDir, None, ENTRY_MODIFY)
-        val writer = new BufferedWriter(new FileWriter(tempFileInTempDir.toFile))
+        val writer         = new BufferedWriter(new FileWriter(tempFileInTempDir.toFile))
         writer.write(
           """
             |Theres text in here again!!
@@ -180,7 +183,7 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
 
         it("should have the correct path in the event") {
           val Some(watchKey) = watchServiceTask.watch(tempFileInTempDir, None, ENTRY_MODIFY)
-          val writer = new BufferedWriter(new FileWriter(tempFileInTempDir.toFile))
+          val writer         = new BufferedWriter(new FileWriter(tempFileInTempDir.toFile))
           writer.write(
             """
               |Theres text in here wee!!
@@ -193,7 +196,8 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
           }
           watchKey.reset()
           eventList foreach { event =>
-            watchServiceTask.contextAbsolutePath(watchKey, event.context().asInstanceOf[Path]) should
+            watchServiceTask
+              .contextAbsolutePath(watchKey, event.context().asInstanceOf[Path]) should
               be(tempFileInTempDir.toAbsolutePath)
           }
         }
@@ -205,8 +209,10 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
     describe("for multiple WatchKind.Events") {
 
       it("should cause all registered event kinds to be detectable for a path") {
-        val tempFileInTempDir2 = Files.createTempFile(tempDirPath.toAbsolutePath, "hello2", ".there")
-        val Some(watchKey) = watchServiceTask.watch(tempFileInTempDir2, None, ENTRY_MODIFY, ENTRY_DELETE)
+        val tempFileInTempDir2 =
+          Files.createTempFile(tempDirPath.toAbsolutePath, "hello2", ".there")
+        val Some(watchKey) =
+          watchServiceTask.watch(tempFileInTempDir2, None, ENTRY_MODIFY, ENTRY_DELETE)
         val writer = new BufferedWriter(new FileWriter(tempFileInTempDir2.toFile))
         writer.write(
           """
@@ -217,7 +223,7 @@ class WatchServiceTaskSpec extends TestKit(ActorSystem("testSystem"))
         val eventList = watchKey.pollEvents().asScala
         /*
          .size >= 2 because some systems fire multiple entry modifies on update
-          */
+         */
         repeatFor(30 seconds, eventList.size >= 2) {
           eventList.append(watchKey.pollEvents().asScala: _*)
         }
