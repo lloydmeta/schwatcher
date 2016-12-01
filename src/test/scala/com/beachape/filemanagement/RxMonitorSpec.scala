@@ -2,8 +2,8 @@ package com.beachape.filemanagement
 
 import akka.actor.ActorSystem
 import akka.testkit.TestKit
-import org.scalatest.{ FunSpec, PrivateMethodTester, Matchers }
-import java.nio.file.{ Files, Path }
+import org.scalatest.{FunSpec, PrivateMethodTester, Matchers}
+import java.nio.file.{Files, Path}
 import rx.lang.scala.Observer
 import com.beachape.filemanagement.Messages.EventAtPath
 import scala.concurrent.Promise
@@ -13,17 +13,21 @@ import java.nio.file.StandardWatchEventKinds._
 class RxMonitorSpec extends FunSpec with Matchers with PrivateMethodTester with ScalaFutures {
 
   abstract class Context extends TestKit(ActorSystem("testSystem")) {
-    val tempDirPath = Files.createTempDirectory("root")
+    val tempDirPath           = Files.createTempDirectory("root")
     val pushNextPathToSubject = PrivateMethod[Function[Path, Unit]]('pushNextPathToSubject)
-    val monitor = RxMonitor()
-    val observable = monitor.observable
-    val nextP = Promise[EventAtPath]
-    val nextF = nextP.future
-    val doneP = Promise[Boolean]
-    val doneF = doneP.future
+    val monitor               = RxMonitor()
+    val observable            = monitor.observable
+    val nextP                 = Promise[EventAtPath]
+    val nextF                 = nextP.future
+    val doneP                 = Promise[Boolean]
+    val doneF                 = doneP.future
     val observer = Observer(
-      onNext = { (p: EventAtPath) => nextP.success(p) },
-      onError = { e => doneP.failure(e) },
+      onNext = { (p: EventAtPath) =>
+        nextP.success(p)
+      },
+      onError = { e =>
+        doneP.failure(e)
+      },
       onCompleted = () => doneP.success(true)
     )
   }
@@ -41,7 +45,7 @@ class RxMonitorSpec extends FunSpec with Matchers with PrivateMethodTester with 
   /*
    Testing a private method here because it is the onl other tricky thing in this
    new extension
-  */
+   */
   describe("private method pushNextPathToSubject") {
     it("should return a function that will push EventAtPaths to the RxMonitor's observable") {
       new Context {
