@@ -2,9 +2,9 @@ name := "schwatcher"
 
 version := "0.3.4-SNAPSHOT"
 
-scalaVersion := "2.11.8"
+scalaVersion := "2.11.11"
 
-crossScalaVersions := Seq("2.11.8", "2.12.0")
+crossScalaVersions := Seq("2.11.11", "2.12.3")
 
 crossVersion := CrossVersion.binary
 
@@ -74,7 +74,3 @@ scalacOptions ++= Seq(
   "-Xfuture",
   "-Ywarn-unused-import" // 2.11 only
 )
-
-scalafmtConfig := Some(file(".scalafmt.conf"))
-
-reformatOnCompileSettings

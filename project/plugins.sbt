@@ -1,1 +1,5 @@
-addSbtPlugin("com.geirsson" % "sbt-scalafmt" % "0.4.10")
+lazy val neoScalafmtVersion = "1.14"
+
+addSbtPlugin("com.lucidchart" % "sbt-scalafmt" % neoScalafmtVersion)
+
+addSbtPlugin("com.lucidchart" % "sbt-scalafmt-coursier" % neoScalafmtVersion)
