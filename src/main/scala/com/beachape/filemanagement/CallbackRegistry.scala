@@ -25,8 +25,7 @@ object CallbackRegistry {
   * Should be instantiated via companion object above
   * @param pathToCallbacksMap Map[Path,List[Callbacks]] for dereferencing Paths and callback
   */
-class CallbackRegistry(pathToCallbacksMap: Map[Path, List[Callback]])
-    extends RecursiveFileActions {
+class CallbackRegistry(pathToCallbacksMap: Map[Path, List[Callback]]) extends RecursiveFileActions {
 
   /**
     * Returns a new instance of CallbackRegistry with the callback registered for the

@@ -238,8 +238,7 @@ class MonitorActorSpec extends FunSpec with Matchers with BeforeAndAfter with Pr
         }
       }
 
-      it(
-        "should return Some[Callbacks] that does not contain callbacks for paths never registered") {
+      it("should return Some[Callbacks] that does not contain callbacks for paths never registered") {
         new Fixtures {
           val tempFile2 = java.io.File.createTempFile("fakeFile2", ".log")
           tempFile2.deleteOnExit()
@@ -255,12 +254,14 @@ class MonitorActorSpec extends FunSpec with Matchers with BeforeAndAfter with Pr
 
       it("should get the proper callback for a file path") {
         new MessagingFixtures {
-          val cbMap = addCallbackFor(emptyCbMap,
-                                     List(
-                                       (tempDirPath, ENTRY_CREATE, callbackFunc, false),
-                                       (tempDirLevel2Path, ENTRY_CREATE, callbackFunc, false),
-                                       (tempFileInTempDir, ENTRY_CREATE, callbackFunc, false)
-                                     ))
+          val cbMap = addCallbackFor(
+            emptyCbMap,
+            List(
+              (tempDirPath, ENTRY_CREATE, callbackFunc, false),
+              (tempDirLevel2Path, ENTRY_CREATE, callbackFunc, false),
+              (tempFileInTempDir, ENTRY_CREATE, callbackFunc, false)
+            )
+          )
           monitorActor.processCallbacksFor(cbMap, emptyCbMap, ENTRY_CREATE, tempFileInTempDir)
           /*
             Fired twice because tempDirPath and tempFileInTempDir are both registered.
@@ -273,12 +274,14 @@ class MonitorActorSpec extends FunSpec with Matchers with BeforeAndAfter with Pr
 
       it("should get the proper callback for a directory") {
         new MessagingFixtures {
-          val cbMap = addCallbackFor(emptyCbMap,
-                                     List(
-                                       (tempDirPath, ENTRY_MODIFY, callbackFunc, false),
-                                       (tempDirLevel2Path, ENTRY_MODIFY, callbackFunc, false),
-                                       (tempFileInTempDir, ENTRY_MODIFY, callbackFunc, false)
-                                     ))
+          val cbMap = addCallbackFor(
+            emptyCbMap,
+            List(
+              (tempDirPath, ENTRY_MODIFY, callbackFunc, false),
+              (tempDirLevel2Path, ENTRY_MODIFY, callbackFunc, false),
+              (tempFileInTempDir, ENTRY_MODIFY, callbackFunc, false)
+            )
+          )
           monitorActor.processCallbacksFor(cbMap, emptyCbMap, ENTRY_MODIFY, tempDirPath)
           expectMsg(tempDirPath)
         }

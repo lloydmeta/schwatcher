@@ -87,6 +87,7 @@ class MonitorActor(concurrency: Int = 5, dedupeTime: FiniteDuration = 1.5.second
   override def postStop(): Unit = {
     watchThread.interrupt()
     flushTrackerCycle.cancel()
+    ()
   }
 
   def receive: Receive =
@@ -229,7 +230,9 @@ class MonitorActor(concurrency: Int = 5, dedupeTime: FiniteDuration = 1.5.second
       if (recursive) forEachDir(path) { subDir =>
         log.debug(s"Adding $subDir to WatchServiceTask")
         watchServiceTask.watch(subDir, modifier, distinctEventTypes: _*)
+        ()
       }
+      ()
     }
   }
 

@@ -62,7 +62,7 @@ class WatchServiceTask(notifyActor: ActorRef) extends Runnable {
         key.reset()
       }
     } catch {
-      case e: InterruptedException =>
+      case _: InterruptedException =>
     } finally {
       stopService()
     }

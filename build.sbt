@@ -2,9 +2,9 @@ name := "schwatcher"
 
 version := "0.3.4-SNAPSHOT"
 
-scalaVersion := "2.11.11"
+scalaVersion := "2.12.4"
 
-crossScalaVersions := Seq("2.11.11", "2.12.3")
+crossScalaVersions := Seq("2.11.11", "2.12.4")
 
 crossVersion := CrossVersion.binary
 
@@ -57,20 +57,26 @@ pomExtra := (
   </developers>
 )
 
-scalacOptions ++= Seq(
-  "-deprecation",
-  "-encoding",
-  "UTF-8", // yes, this is 2 args
-  "-feature",
-  "-language:existentials",
-  "-language:higherKinds",
-  "-language:implicitConversions",
-  "-unchecked",
-  "-Xfatal-warnings",
-  "-Xlint",
-  "-Yno-adapted-args",
-  "-Ywarn-dead-code", // N.B. doesn't work well with the ??? hole
-  "-Ywarn-numeric-widen",
-  "-Xfuture",
-  "-Ywarn-unused-import" // 2.11 only
-)
+scalacOptions ++= {
+  val common = Seq(
+    "-deprecation",
+    "-encoding",
+    "UTF-8", // yes, this is 2 args
+    "-feature",
+    "-language:existentials",
+    "-language:higherKinds",
+    "-language:implicitConversions",
+    "-unchecked",
+    "-Xfatal-warnings",
+    "-Yno-adapted-args",
+    "-Ywarn-dead-code", // N.B. doesn't work well with the ??? hole
+    "-Ywarn-numeric-widen",
+    "-Xfuture",
+    "-Ywarn-unused-import" // 2.11 only
+  )
+  if (scalaVersion.value.startsWith("2.12")) {
+    common :+ "-Xlint:-unused,_"
+  } else {
+    common :+ "-Xlint"
+  }
+}
