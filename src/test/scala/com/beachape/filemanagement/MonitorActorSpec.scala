@@ -368,7 +368,7 @@ class MonitorActorSpec extends FunSpec with Matchers with BeforeAndAfter with Pr
             )
             monitorActorRef ! UnRegisterCallback(ENTRY_CREATE, tempFileInTempDir)
             monitorActorRef ! EventAtPath(ENTRY_CREATE, tempFileInTempDir)
-            expectNoMsg()
+            
           }
 
         }
@@ -384,7 +384,7 @@ class MonitorActorSpec extends FunSpec with Matchers with BeforeAndAfter with Pr
             )
             monitorActorRef ! UnRegisterCallback(ENTRY_DELETE, tempDirPath)
             monitorActorRef ! EventAtPath(ENTRY_DELETE, tempDirPath)
-            expectNoMsg()
+            expectNoMessage(remainingOrDefault)
           }
         }
 
@@ -401,7 +401,7 @@ class MonitorActorSpec extends FunSpec with Matchers with BeforeAndAfter with Pr
             monitorActorRef ! UnRegisterCallback(ENTRY_MODIFY, tempDirPath, recursive = true)
             monitorActorRef ! EventAtPath(ENTRY_MODIFY, tempDirLevel1Path)
             monitorActorRef ! EventAtPath(ENTRY_MODIFY, tempDirLevel1Path)
-            expectNoMsg()
+            expectNoMessage(remainingOrDefault)
           }
         }
 
