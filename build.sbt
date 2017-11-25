@@ -46,10 +46,6 @@ pomExtra := (
       <distribution>repo</distribution>
     </license>
   </licenses>
-  <scm>
-    <url>git@github.com:lloydmeta/schwatcher.git</url>
-    <connection>scm:git:git@github.com:lloydmeta/schwatcher.git</connection>
-  </scm>
   <developers>
     <developer>
       <id>lloydmeta</id>
